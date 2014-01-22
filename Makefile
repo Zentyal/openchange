@@ -1558,25 +1558,58 @@ pyopenchange-uninstall:
 ###################
 # php code
 ###################
-PHP_MAPI_H="php/php_mapi.h php/mapi_exception.h php/mapi_profile_db.h php/mapi_profile.h php/mapi_session.h php/mapi_mailbox.h php/mapi_mailbox.h php/mapi_folder.h php/mapi_message.h php/mapi_contact.h php/mapi_task.h php/mapi_appointment.h php/mapi_attachment.h php/mapi_table.h php/mapi_message_table.h php/mapi_folder_table.h php/mapi_attachment_table.h"
-PHP_MAPI_SRC="php/mapi.c php/mapi_exception.c php/mapi_profile_db.c php/mapi_profile.c php/mapi_session.c php/mapi_mailbox.c php/mapi_folder.c php/mapi_message.c php/mapi_contact.c php/mapi_task.c php/mapi_appointment.c php/mapi_attachment.c php/mapi_table.c php/mapi_message_table.c php/mapi_folder_table.c php/mapi_attachment_table.c php/php_mapi_constants.c"
 
 PHP_MAPI_WARNINGS = -Wno-strict-prototypes -Wno-write-strings -Wno-missing-prototypes -Wno-unused-parameter
 
 phpopenchange:	php/modules/openchange.$(SHLIBEXT)
 
-php/modules/openchange.$(SHLIBEXT):	php/config.m4 $(PHP_MAPI_H) $(PHP_MAPI_SRC) libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+php/modules/openchange.$(SHLIBEXT):	php/config.m4			\
+							php/php_mapi.h					\
+							php/mapi_exception.h			\
+							php/mapi_profile_db.h			\
+							php/mapi_profile.h				\
+							php/mapi_session.h				\
+							php/mapi_mailbox.h				\
+							php/mapi_mailbox.h				\
+							php/mapi_folder.h				\
+							php/mapi_message.h				\
+							php/mapi_contact.h				\
+							php/mapi_task.h					\
+							php/mapi_appointment.h			\
+							php/mapi_attachment.h			\
+							php/mapi_table.h				\
+							php/mapi_message_table.h		\
+							php/mapi_folder_table.h			\
+							php/mapi_attachment_table.h		\
+							php/mapi.c						\
+							php/mapi_exception.c			\
+							php/mapi_profile_db.c			\
+							php/mapi_profile.c				\
+							php/mapi_session.c				\
+							php/mapi_mailbox.c				\
+							php/mapi_folder.c				\
+							php/mapi_message.c				\
+							php/mapi_contact.c				\
+							php/mapi_task.c					\
+							php/mapi_appointment.c			\
+							php/mapi_attachment.c			\
+							php/mapi_table.c				\
+							php/mapi_message_table.c		\
+							php/mapi_folder_table.c			\
+							php/mapi_attachment_table.c		\
+							php/php_mapi_constants.c		\
+							libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 	cd php && $(PHPIZE) --clean && $(PHPIZE)
 	cd php && ./configure CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS)" LDFLAGS="$(LDFLAGS)"
 	cd php && $(MAKE) CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS)"
 
-pyopenchange-clean:
+phpopenchange-clean:
 	if [ -n "$(PHPIZE)" ] ; then \
-		cd php && touch config.m4 && $(PHPIZE) --clean && cd .. ; \
+	cd php && $(PHPIZE) --clean && cd .. ; \
 	fi ; \
-	rm -f php/config.h.in~ php/config.m4 ; \
+	rm -f php/config.h.in~ ;
 
-clean:: pyopenchange-clean
+clean:: phpopenchange-clean
 
 # PHP's build system uses INSTALL_ROOT where everyone else uses DESTDIR.
 phpopenchange-install: php/modules/openchange.$(SHLIBEXT)

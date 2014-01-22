@@ -10,6 +10,9 @@ DESTDIR = $(CURDIR)/debian/tmp
 PYVERS = $(shell pyversions -rv)
 export PYTHON="$(shell which `pyversions -r`)"
 
+PHP_EX=$(shell /usr/bin/php-config5 --extension-dir)
+PHP_APIVER=$(shell /usr/bin/php-config5 --phpapi)
+
 %:
 	dh $@ --with python2
 
@@ -71,6 +74,9 @@ override_dh_auto_install:
 	install -d $(DESTDIR)/usr/lib/python2.7/dist-packages/
 	echo "/opt/samba4/lib/python2.7/dist-packages" > $(DESTDIR)/usr/lib/python2.7/dist-packages/mapistore.pth
 	echo "/opt/samba4/lib/python2.7/dist-packages" > $(DESTDIR)/usr/lib/python2.7/dist-packages/openchange.pth
+	install -D -m 0644 php/modules/openchange.so $(DESTDIR)$(PHP_EX)/openchange.so
+	install -D -m 0644 debian/openchange.ini $(DESTDIR)/etc/php5/conf.d/openchange.ini
+	echo "php:Depends=phpapi-$(PHP_APIVER)" >> $(DESTDIR)/.substvars
 
 override_dh_install:
 	dh_install --sourcedir=debian/tmp --list-missing --fail-missing

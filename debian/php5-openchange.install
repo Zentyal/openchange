@@ -1,0 +1,2 @@
+etc/php5/conf.d/openchange.ini
+usr/lib/php5/*/openchange.so

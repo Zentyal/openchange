@@ -696,18 +696,26 @@ AC_SUBST(PYMAPIUNINSTALL)
 dnl ##########################################################################
 dnl PHP bindings dependencies
 dnl ##########################################################################
-build_phpmapi=
-AC_ARG_ENABLE(phpmapi,
-[AC_HELP_STRING([--enable-phpmapi], [Build PHP bindings for libmapi])],
-[AS_IF([test x"$enableval" = xyes],
-[build_phpmapi=yes
-AC_ARG_VAR([PHPIZE], [Path to phpize])
-AC_PATH_PROG([PHPIZE], [phpize])
-AS_IF([test x"$PHPIZE" = x],
-[AC_MSG_ERROR([cannot build PHP bindings for libmapi without phpize])])])])
-AM_CONDITIONAL([BUILD_PHPMAPI], [test x"$build_phpmapi" = xyes])
-AS_IF([test x"$build_phpmapi" = xyes],
-[AC_CONFIG_FILES([php/config.m4 php/php_openchange.h])])
+AC_ARG_ENABLE(phpmapi, AC_HELP_STRING([--enable-phpmapi],
+              [build PHP bindings for libmapi]),
+              enable_phpmapi="$enableval",
+              enable_phpmapi=no)
+
+AC_PATH_PROG(PHPIZE, phpize)
+if test x"$PHPIZE" = x""; then
+	AC_MSG_ERROR([cannot build PHP bindings for libmapi without phpize!!])
+fi
+
+dnl Enable phpopenchange by default
+PHPMAPIALL="$PYMAPIALL phpopenchange"
+PHPMAPIINSTALL="$PYMAPIALLINSTALL phpopenchange-install"
+PHPMAPIUNINSTALL="$PYMAPIUNINSTALL"
+#PHPMAPIUNINSTALL="$PYMAPIUNINSTALL phpopenchange-uninstall"
+
+AC_SUBST(PHPIZE)
+AC_SUBST(PHPMAPIALL)
+AC_SUBST(PHPMAPIINSTALL)
+AC_SUBST(PHPMAPIUNINSTALL)
 
 dnl ##########################################################################
 dnl Documentation dependencies
