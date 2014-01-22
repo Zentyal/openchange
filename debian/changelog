@@ -1,3 +1,10 @@
+openchange (2:2.0+zentyal3) precise; urgency=low
+
+  * Integrated php5-openchange in the build to refresh the package with
+    each release.
+
+ -- Carlos Perelló Marín <cperello@zentyal.com>  Wed, 22 Jan 2014 21:11:31 +0100
+
 openchange (2:2.0+zentyal1) precise; urgency=low
 
   * Built GIT snapshot.
