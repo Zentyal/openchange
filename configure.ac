@@ -693,6 +693,21 @@ AC_SUBST(PYMAPIALL)
 AC_SUBST(PYMAPIINSTALL)
 AC_SUBST(PYMAPIUNINSTALL)
 
+dnl ##########################################################################
+dnl PHP bindings dependencies
+dnl ##########################################################################
+build_phpmapi=
+AC_ARG_ENABLE(phpmapi,
+[AC_HELP_STRING([--enable-phpmapi], [Build PHP bindings for libmapi])],
+[AS_IF([test x"$enableval" = xyes],
+[build_phpmapi=yes
+AC_ARG_VAR([PHPIZE], [Path to phpize])
+AC_PATH_PROG([PHPIZE], [phpize])
+AS_IF([test x"$PHPIZE" = x],
+[AC_MSG_ERROR([cannot build PHP bindings for libmapi without phpize])])])])
+AM_CONDITIONAL([BUILD_PHPMAPI], [test x"$build_phpmapi" = xyes])
+AS_IF([test x"$build_phpmapi" = xyes],
+[AC_CONFIG_FILES([php/config.m4 php/php_openchange.h])])
 
 dnl ##########################################################################
 dnl Documentation dependencies
