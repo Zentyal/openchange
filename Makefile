@@ -1599,12 +1599,14 @@ php/modules/openchange.$(SHLIBEXT):	php/config.m4			\
 							php/mapi_attachment_table.c		\
 							php/php_mapi_constants.c		\
 							libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
-	cd php && $(PHPIZE) --clean && $(PHPIZE)
-	cd php && ./configure CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS)" LDFLAGS="$(LDFLAGS)"
-	cd php && $(MAKE) CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS)"
+	@echo "Compiling and linking $@"
+	@cd php && $(PHPIZE) --clean && $(PHPIZE)
+	@cd php && ./configure CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS) -I.." LDFLAGS="$(LDFLAGS) -L.."
+	@cd php && $(MAKE) CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS) -I.."
 
 phpopenchange-clean:
-	if [ -n "$(PHPIZE)" ] ; then \
+	@echo "Cleaning php bindings"
+	@if [ -n "$(PHPIZE)" ] ; then \
 	cd php && $(PHPIZE) --clean && cd .. ; \
 	fi ; \
 	rm -f php/config.h.in~ ;
@@ -1613,7 +1615,8 @@ clean:: phpopenchange-clean
 
 # PHP's build system uses INSTALL_ROOT where everyone else uses DESTDIR.
 phpopenchange-install: php/modules/openchange.$(SHLIBEXT)
-	cd php && $(MAKE) install INSTALL_ROOT=$(DESTDIR)
+	@echo "Installing php bindings"
+	@cd php && $(MAKE) install INSTALL_ROOT=$(DESTDIR)
 
 #phpopenchange-uninstall:
 #	rm -f $(DESTDIR)$(PYCDIR)/openchange/mapi.$(SHLIBEXT)
