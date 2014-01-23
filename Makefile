@@ -1602,7 +1602,7 @@ php/modules/openchange.$(SHLIBEXT):	php/config.m4			\
 	@echo "Compiling and linking $@"
 	@cd php && $(PHPIZE) --clean && $(PHPIZE)
 	@cd php && ./configure CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS) -I.." LDFLAGS="$(LDFLAGS) -L.."
-	@cd php && $(MAKE) CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS) -I.."
+	@cd php && $(MAKE) CFLAGS="$(CFLAGS) $(PHP_MAPI_WARNINGS) -I.." LDFLAGS="$(LDFLAGS) -Wl,-rpath,/opt/samba4/lib -L/opt/samba4/lib -lldb -ltalloc -lmapi"
 
 phpopenchange-clean:
 	@echo "Cleaning php bindings"
