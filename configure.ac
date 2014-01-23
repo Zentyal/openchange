@@ -693,6 +693,29 @@ AC_SUBST(PYMAPIALL)
 AC_SUBST(PYMAPIINSTALL)
 AC_SUBST(PYMAPIUNINSTALL)
 
+dnl ##########################################################################
+dnl PHP bindings dependencies
+dnl ##########################################################################
+AC_ARG_ENABLE(phpmapi, AC_HELP_STRING([--enable-phpmapi],
+              [build PHP bindings for libmapi]),
+              enable_phpmapi="$enableval",
+              enable_phpmapi=no)
+
+AC_PATH_PROG(PHPIZE, phpize)
+if test x"$PHPIZE" = x""; then
+	AC_MSG_ERROR([cannot build PHP bindings for libmapi without phpize!!])
+fi
+
+dnl Enable phpopenchange by default
+PHPMAPIALL="$PYMAPIALL phpopenchange"
+PHPMAPIINSTALL="$PYMAPIALLINSTALL phpopenchange-install"
+PHPMAPIUNINSTALL="$PYMAPIUNINSTALL"
+#PHPMAPIUNINSTALL="$PYMAPIUNINSTALL phpopenchange-uninstall"
+
+AC_SUBST(PHPIZE)
+AC_SUBST(PHPMAPIALL)
+AC_SUBST(PHPMAPIINSTALL)
+AC_SUBST(PHPMAPIUNINSTALL)
 
 dnl ##########################################################################
 dnl Documentation dependencies

@@ -18,7 +18,8 @@ Build-Depends: autoconf,
                libsubunit-dev,
                pkg-config,
                python-dev (>= 2.6.6-3),
-               samba4 (>= 4.1.0rc2-zentyal6),
+               php5-dev,
+               samba4 (>= 4.1.3-zentyal2 ),
                zlib1g-dev,
                python-paste,
                python-pastedeploy,
@@ -279,3 +280,14 @@ Description: Experimental MAPI (Exchange/Outlook) server
  protocol that is used by Microsoft Outlook and Exchange.
  .
  This package contains the debugging symbols
+
+Package: php5-openchange
+Section: php
+Architecture: any
+Depends: libmapi0 (= ${binary:Version}),
+         ${php:Depends},
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: MAPI extensions module for PHP5
+ Those are the bindings for PHP projects that want to make use of
+ the libmapi.

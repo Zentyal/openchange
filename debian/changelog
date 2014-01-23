@@ -1,3 +1,22 @@
+openchange (2:2.0+zentyal5) precise; urgency=low
+
+  * Fixed php5-openchange missing build links.
+
+ -- Carlos Perelló Marín <cperello@zentyal.com>  Thu, 23 Jan 2014 20:37:33 +0100
+
+openchange (2:2.0+zentyal4) precise; urgency=low
+
+  * Fixed the php5-openchange build on pbuilder.
+
+ -- Carlos Perelló Marín <cperello@zentyal.com>  Thu, 23 Jan 2014 10:51:23 +0100
+
+openchange (2:2.0+zentyal3) precise; urgency=low
+
+  * Integrated php5-openchange in the build to refresh the package with
+    each release.
+
+ -- Carlos Perelló Marín <cperello@zentyal.com>  Wed, 22 Jan 2014 21:11:31 +0100
+
 openchange (2:2.0+zentyal1) precise; urgency=low
 
   * Built GIT snapshot.

@@ -10,13 +10,6 @@ if test "$PHP_MAPI" = "yes"; then
   PHP_NEW_EXTENSION(openchange, $PHP_MAPI_SRC, $ext_shared)
 fi
 
-PHP_ARG_WITH(pkgconfig-path, path to libmapi pkgconfig directory,
-[  --with-pkgconfig-path Path to libmapi pkgconfig directory], /usr/local/samba/lib/pkgconfig)
-
-LIBMAPI_INCLINE=`PKG_CONFIG_PATH=/opt/samba4/lib/pkgconfig pkg-config --cflags libmapi`
-LIBMAPI_LIBLINE=`PKG_CONFIG_PATH=/opt/samba4/lib/pkgconfig pkg-config --libs libmapi`
-
-LDFLAGS="$LDFLAGS $LIBMAPI_LIBLINE"
-INCLUDES="$INCLUDES $LIBMAPI_INCLINE -I$PHP_OPENCHANGE_PATH -I$PHP_OPENCHANGE_PATH/utils"
+INCLUDES="$INCLUDES -I$PHP_OPENCHANGE_PATH -I$PHP_OPENCHANGE_PATH/utils"
 
 $PHP_MAPI_SRC : $PHP_MAPI_H
