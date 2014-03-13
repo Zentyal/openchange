@@ -434,8 +434,8 @@ _PUBLIC_ enum mapistore_error emsmdbp_object_open_folder(TALLOC_CTX *mem_ctx, st
 				parent_fid = parent->object.folder->folderID;
 				break;
 			default:
-				DEBUG(5, ("you should never get here\n"));
-				abort();
+				OC_ABORT(true, ("you should never get here\n"));
+				break;
 			}
 			mailbox_object = emsmdbp_get_mailbox(parent);
 			ret = openchangedb_get_parent_fid(emsmdbp_ctx->oc_ctx, fid, &oc_parent_fid, mailbox_object->object.mailbox->mailboxstore);
