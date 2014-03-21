@@ -135,6 +135,76 @@ _PUBLIC_ bool mapitest_nspi_QueryRows(struct mapitest *mt)
 
 
 /**
+   \details Test the NspiQueryRows RPC operation (0x3)
+
+   \param mt pointer on the top-level mapitest structure
+
+   \return true on success, otherwise false
+ */
+_PUBLIC_ bool mapitest_nspi_QueryRows_SanityCheck(struct mapitest *mt)
+{
+	TALLOC_CTX			*mem_ctx;
+	enum MAPISTATUS			retval;
+	struct nspi_context		*nspi_ctx;
+	struct PropertyTagArray_r	*MIds;
+	struct PropertyRowSet_r		*RowSet;
+	struct SPropTagArray		*SPropTagArray;
+	struct PropertyValue_r		*lpProp;
+	struct STAT			*pStatRestore, stat;
+
+	mem_ctx = talloc_named(NULL, 0, __FUNCTION__);
+	nspi_ctx = (struct nspi_context *) mt->session->nspi->ctx;
+
+	/* Build the array of columns we want to retrieve */
+	SPropTagArray = set_SPropTagArray(mem_ctx, 14,
+						PidTagDisplayName,
+						PidTagTitle,
+						PidTagBusinessTelephoneNumber,
+						PidTagOfficeLocation,
+						PidTagSmtpAddress,
+						PidTagCompanyName,
+						PidTagAccount,
+						PidTagAddressType,
+						PidTagEntryId,
+						PidTagObjectType,
+						PidTagDisplayType,
+						PidTagDisplayTypeEx,
+						PidTagInstanceKey,
+						PidTagEmailAddress);
+
+	/* Craft a STAT structure to throw at NspiQueryRows */
+	ZERO_STRUCT(stat);
+	stat.SortType = SortTypeDisplayName;
+	stat.ContainerID = 0;
+	stat.CurrentRec = MID_BEGINNING_OF_TABLE;
+	stat.Delta = 3;
+	stat.NumPos = 3;
+	stat.TotalRecs = 5;
+	stat.CodePage = 1252;
+	stat.TemplateLocale = 1033;
+	stat.SortLocale = 1033;
+
+	pStatRestore = nspi_ctx->pStat;
+	nspi_ctx->pStat = &stat;
+
+	/* Query the rows */
+	RowSet = talloc_zero(mem_ctx, struct PropertyRowSet_r);
+	retval = nspi_QueryRows(nspi_ctx, mem_ctx, SPropTagArray, NULL, 28, &RowSet);
+	nspi_ctx->pStat = pStatRestore;
+	MAPIFreeBuffer(RowSet);
+	mapitest_print_retval_clean(mt, "NspiQueryRows", retval);
+	if (retval != MAPI_E_SUCCESS) {
+		talloc_free(mem_ctx);
+		return false;
+	}
+
+	talloc_free(mem_ctx);
+
+	return true;
+}
+
+
+/**
    \details Test the NspiSeekEntries RPC operation (0x04)
 
    \param mt pointer on the top-level mapitest structure

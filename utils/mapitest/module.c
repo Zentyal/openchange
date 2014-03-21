@@ -342,6 +342,7 @@ _PUBLIC_ uint32_t module_nspi_init(struct mapitest *mt)
 	
 	mapitest_suite_add_test(suite, "UPDATESTAT", "Update the STAT structure", mapitest_nspi_UpdateStat);
 	mapitest_suite_add_test(suite, "QUERYROWS", "Returns a number of rows from a specified table", mapitest_nspi_QueryRows);
+	mapitest_suite_add_test(suite, "QUERYROWS_SANITY", "Sanity check for NspiQueryRows", mapitest_nspi_QueryRows_SanityCheck);
 	mapitest_suite_add_test(suite, "SEEKENTRIES", "Searches for and sets the logical position in a specific table", mapitest_nspi_SeekEntries);
 	mapitest_suite_add_test(suite, "GETMATCHES", "Returns an explicit table", mapitest_nspi_GetMatches);
 	mapitest_suite_add_test(suite, "RESORTRESTRICTION", "Apply a sort order to the objects in a restricted address book container", mapitest_nspi_ResortRestriction);
