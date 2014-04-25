@@ -7,10 +7,21 @@
 #include <popt.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 #include <bsd/libutil.h>
 
 #include "notification.h"
 #include "notification_config.h"
+
+static bool run = true;
+
+	static void
+handle_signal(int sig, siginfo_t *siginfo, void *context)
+{
+	syslog(LOG_INFO, "Signal received. Sending PID: %ld, UID: %ld\n",
+		(long)siginfo->si_pid, (long)siginfo->si_uid);
+	run = false;
+}
 
 	int
 main(int argc, const char *argv[])
@@ -24,6 +35,7 @@ main(int argc, const char *argv[])
 	poptContext pc;
 	struct context *ctx;
 	struct pidfh *pfh;
+	struct sigaction sa;
 	pid_t otherpid, childpid;
 	enum {
 		OPT_DAEMON = 1000,
@@ -99,6 +111,8 @@ main(int argc, const char *argv[])
 	/* Set file mask */
 	umask(0);
 
+	/* TODO chdir */
+
 	/* Become daemon */
 	if (opt_daemon) {
 		if (daemon(0, 0) < 0) {
@@ -108,13 +122,23 @@ main(int argc, const char *argv[])
 		}
 	}
 
-	/* TODO Setup signals */
+	/* Setup signals */
+	sa.sa_sigaction = &handle_signal;
+	sa.sa_flags = SA_SIGINFO;
+	if (sigaction(SIGINT, &sa, NULL) < 0) {
+		syslog(LOG_ERR, "Failed to setup signal handler");
+		run = false;
+	}
+	if (sigaction(SIGTERM, &sa, NULL) < 0) {
+		syslog(LOG_ERR, "Failed to setup signal handler");
+		run = false;
+	}
 
 	/* Write pid to file */
 	pidfile_write(pfh);
 
 	/* Do work */
-	while (true) {
+	while (run) {
 		syslog(LOG_INFO, "running");
 		sleep(1);
 	}
