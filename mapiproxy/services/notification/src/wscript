@@ -64,6 +64,12 @@ def configure(ctx):
                   msg="Check for popt 1.16",
                   mandatory=True)
 
+    ctx.check_cfg(package='libconfig',
+                  args=['libconfig >= 1.4.9', '--cflags', '--libs'],
+                  uselib_store='LIBCONFIG',
+                  msg="Check for libconfig 1.4.9",
+                  mandatory=True)
+
     ctx.check_cfg(package='libssl',
                   args=['libssl >= 1.0.1f', '--cflags', '--libs'],
                   uselib_store='LIBSSL',
@@ -80,10 +86,11 @@ def build(bld):
     bld.program(
         source = [
             'notification.c',
+            'notification_config.c',
             ],
         target = 'openchange-notification-service',
         includes = ['.', '..'],
         cflags = ['-ggdb'],
         depends_on = [APPNAME],
         #use = [APPNAME, 'LIBMAPI', 'POPT', 'RABBITMQ'])
-        use = [APPNAME, 'POPT', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
+        use = [APPNAME, 'POPT', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
