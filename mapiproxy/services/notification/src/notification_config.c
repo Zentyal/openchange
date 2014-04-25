@@ -49,6 +49,11 @@ read_config(struct context *ctx, const char *config_file)
 		errx(EXIT_FAILURE, "Missing broker_pass "
 				"in config file %s", config_file);
 	}
+	if (config_lookup_string(&cfg, "broker_vhost", &sval)) {
+		ctx->broker_vhost = strdup(sval);
+	} else {
+		ctx->broker_vhost = strdup("/");
+	}
 	if (config_lookup_string(&cfg, "broker_exchange", &sval)) {
 		ctx->broker_exchange = strdup(sval);
 	} else {

@@ -12,6 +12,7 @@
 
 #include "notification.h"
 #include "notification_config.h"
+#include "notification_amqp.h"
 
 static bool run = true;
 
@@ -139,9 +140,20 @@ main(int argc, const char *argv[])
 
 	/* Do work */
 	while (run) {
-		syslog(LOG_INFO, "running");
-		sleep(1);
+		if (!broker_is_alive(ctx)) {
+			if (!broker_connect(ctx)) {
+				usleep(500000);
+				continue;
+			}
+			if (!broker_declare(ctx)) {
+				usleep(500000);
+				continue;
+			}
+		}
 	}
+
+	/* Disconnect from broker */
+	broker_disconnect(ctx);
 
 	/* Close logs */
 	closelog();
@@ -150,7 +162,9 @@ main(int argc, const char *argv[])
 	pidfile_remove(pfh);
 
 	/* Free context */
+	/* TODO Free context strings */
 	free(ctx);
 
 	exit(EXIT_SUCCESS);
 }
+

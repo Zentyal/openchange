@@ -87,6 +87,7 @@ def build(bld):
         source = [
             'notification.c',
             'notification_config.c',
+	    'notification_amqp.c',
             ],
         target = 'openchange-notification-service',
         includes = ['.', '..'],
