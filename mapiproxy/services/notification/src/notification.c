@@ -149,7 +149,13 @@ main(int argc, const char *argv[])
 				usleep(500000);
 				continue;
 			}
+			if (!broker_start_consumer(ctx)) {
+				usleep(500000);
+				continue;
+			}
 		}
+		syslog(LOG_DEBUG, "Waiting for message");
+		broker_consume(ctx);
 	}
 
 	/* Disconnect from broker */

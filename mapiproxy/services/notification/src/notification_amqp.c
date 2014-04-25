@@ -5,6 +5,7 @@
 #include <malloc.h>
 
 #include "notification.h"
+
 	char *
 broker_err(amqp_rpc_reply_t r)
 {
@@ -230,10 +231,11 @@ broker_declare(struct context *ctx)
 	amqp_queue_bind(
 		ctx->broker_conn,
 		1,		/* Channel */
-		amqp_cstring_bytes("new-mail-queue"),
+		amqp_cstring_bytes("new-mail-queue"),		/* queue */
 		amqp_cstring_bytes(ctx->broker_exchange),
-		amqp_cstring_bytes("dovecot-new-mail"),
+		amqp_cstring_bytes("dovecot-new-mail"),		/* routing key */
 		amqp_empty_table);
+	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
 		char *buffer = broker_err(r);
 		syslog(LOG_ERR, "Failed to bind: %s", buffer);
@@ -245,3 +247,96 @@ broker_declare(struct context *ctx)
 	return true;
 }
 
+	bool
+broker_start_consumer(struct context *ctx)
+{
+	amqp_rpc_reply_t r;
+
+	syslog(LOG_DEBUG, "Starting consumer");
+	amqp_basic_consume(
+		ctx->broker_conn,
+		1,		/* Channel */
+		amqp_cstring_bytes("new-mail-queue"),
+		amqp_empty_bytes,	/* Consumer tag */
+		0,			/* No local */
+		1,			/* No ack */
+		0,			/* exclusive */
+		amqp_empty_table);
+	r = amqp_get_rpc_reply(ctx->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *buffer = broker_err(r);
+		syslog(LOG_ERR, "Failed to start consumer: %s", buffer);
+		free(buffer);
+		broker_disconnect(ctx);
+		return false;
+	}
+
+	return true;
+}
+
+	void
+broker_consume(struct context *ctx)
+{
+	amqp_rpc_reply_t ret;
+	amqp_envelope_t envelope;
+	amqp_frame_t frame;
+
+	amqp_maybe_release_buffers(ctx->broker_conn);
+	ret = amqp_consume_message(ctx->broker_conn, &envelope, NULL, 0);
+	if (AMQP_RESPONSE_NORMAL != ret.reply_type) {
+		if (AMQP_RESPONSE_LIBRARY_EXCEPTION == ret.reply_type &&
+				AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
+			if (AMQP_STATUS_OK != amqp_simple_wait_frame(ctx->broker_conn, &frame)) {
+				return;
+			}
+
+			if (AMQP_FRAME_METHOD == frame.frame_type) {
+				switch (frame.payload.method.id) {
+					case AMQP_BASIC_ACK_METHOD:
+						/* if we've turned publisher confirms on, and we've published a message
+						 * here is a message being confirmed
+						 */
+						break;
+					case AMQP_BASIC_RETURN_METHOD:
+						/* if a published message couldn't be routed and the mandatory flag was set
+						 * this is what would be returned. The message then needs to be read.
+						 */
+						{
+							amqp_message_t message;
+							ret = amqp_read_message(ctx->broker_conn, frame.channel, &message, 0);
+							if (AMQP_RESPONSE_NORMAL != ret.reply_type) {
+								return;
+							}
+							amqp_destroy_message(&message);
+						}
+
+						break;
+					case AMQP_CHANNEL_CLOSE_METHOD:
+						/* a channel.close method happens when a channel exception occurs, this
+						 * can happen by publishing to an exchange that doesn't exist for example
+						 *
+						 * In this case you would need to open another channel redeclare any queues
+						 * that were declared auto-delete, and restart any consumers that were attached
+						 * to the previous channel
+						 */
+						return;
+					case AMQP_CONNECTION_CLOSE_METHOD:
+						/* a connection.close method happens when a connection exception occurs,
+						 * this can happen by trying to use a channel that isn't open for example.
+						 *
+						 * In this case the whole connection must be restarted.
+						 */
+						return;
+					default:
+						syslog(LOG_ERR, "An unexpected method was received %d\n", frame.payload.method.id);
+						return;
+				}
+			}
+		}
+
+	} else {
+		amqp_destroy_envelope(&envelope);
+	}
+
+	return;
+}
