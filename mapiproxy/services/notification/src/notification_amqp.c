@@ -1,8 +1,9 @@
 #include <stdbool.h>
+#include <malloc.h>
+#include <syslog.h>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
-#include <syslog.h>
-#include <malloc.h>
+#include <json-c/json.h>
 
 #include "notification.h"
 
@@ -283,58 +284,68 @@ broker_consume(struct context *ctx)
 
 	amqp_maybe_release_buffers(ctx->broker_conn);
 	ret = amqp_consume_message(ctx->broker_conn, &envelope, NULL, 0);
-	if (AMQP_RESPONSE_NORMAL != ret.reply_type) {
-		if (AMQP_RESPONSE_LIBRARY_EXCEPTION == ret.reply_type &&
-				AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
+	if (ret.reply_type != AMQP_RESPONSE_NORMAL) {
+		if (AMQP_RESPONSE_LIBRARY_EXCEPTION == ret.reply_type && AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
+			/* A frame other than AMQP_BASIC_DELIVER_METHOD was received, read it */
 			if (AMQP_STATUS_OK != amqp_simple_wait_frame(ctx->broker_conn, &frame)) {
 				return;
 			}
-
+			/* Check the received frame */
 			if (AMQP_FRAME_METHOD == frame.frame_type) {
 				switch (frame.payload.method.id) {
-					case AMQP_BASIC_ACK_METHOD:
-						/* if we've turned publisher confirms on, and we've published a message
-						 * here is a message being confirmed
-						 */
-						break;
-					case AMQP_BASIC_RETURN_METHOD:
-						/* if a published message couldn't be routed and the mandatory flag was set
-						 * this is what would be returned. The message then needs to be read.
-						 */
-						{
-							amqp_message_t message;
-							ret = amqp_read_message(ctx->broker_conn, frame.channel, &message, 0);
-							if (AMQP_RESPONSE_NORMAL != ret.reply_type) {
-								return;
-							}
-							amqp_destroy_message(&message);
-						}
-
-						break;
 					case AMQP_CHANNEL_CLOSE_METHOD:
 						/* a channel.close method happens when a channel exception occurs, this
-						 * can happen by publishing to an exchange that doesn't exist for example
-						 *
+						 * can happen by publishing to an exchange that doesn't exist for example.
 						 * In this case you would need to open another channel redeclare any queues
 						 * that were declared auto-delete, and restart any consumers that were attached
 						 * to the previous channel
 						 */
+						broker_disconnect(ctx);
 						return;
 					case AMQP_CONNECTION_CLOSE_METHOD:
 						/* a connection.close method happens when a connection exception occurs,
 						 * this can happen by trying to use a channel that isn't open for example.
-						 *
 						 * In this case the whole connection must be restarted.
 						 */
+						broker_disconnect(ctx);
 						return;
 					default:
-						syslog(LOG_ERR, "An unexpected method was received %d\n", frame.payload.method.id);
+						syslog(LOG_WARNING, "An unexpected method was received on new-mail-queue queue: %d\n", frame.payload.method.id);
 						return;
 				}
 			}
 		}
-
 	} else {
+		json_object *jobj, *juser, *jfolder, *juid;
+		const char *user, *folder;
+		uint32_t uid;
+
+		/* Process the received message */
+		jobj = json_tokener_parse(envelope.message.body.bytes);
+		if (jobj != NULL) {
+			juser = json_object_object_get(jobj, "user");
+			jfolder = json_object_object_get(jobj, "folder");
+			juid = json_object_object_get(jobj, "uid");
+
+			if (juser != NULL) {
+				/* TODO memory is managed by json-c */
+				user = json_object_get_string(juser);
+			}
+			if (jfolder != NULL) {
+				/* TODO memory is managed by json-c */
+				folder = json_object_get_string(jfolder);
+			}
+			if (juid != NULL) {
+				uid = json_object_get_int(juid);
+			}
+
+			syslog(LOG_DEBUG, "Received on new-mail-queue: User %s, Folder %s, uid %u", user, folder, uid);
+
+			/* Free memory */
+			json_object_put(jobj);
+		}
+
+		/* Free envelope */
 		amqp_destroy_envelope(&envelope);
 	}
 

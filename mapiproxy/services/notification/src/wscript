@@ -70,6 +70,12 @@ def configure(ctx):
                   msg="Check for libconfig 1.4.9",
                   mandatory=True)
 
+    ctx.check_cfg(package='json-c',
+                  args=['json-c >= 0.11.99', '--cflags', '--libs'],
+                  uselib_store='JSON-C',
+                  msg="Check for json-c 0.11.99",
+                  mandatory=True)
+
     ctx.check_cfg(package='libssl',
                   args=['libssl >= 1.0.1f', '--cflags', '--libs'],
                   uselib_store='LIBSSL',
@@ -94,4 +100,4 @@ def build(bld):
         cflags = ['-ggdb'],
         depends_on = [APPNAME],
         #use = [APPNAME, 'LIBMAPI', 'POPT', 'RABBITMQ'])
-        use = [APPNAME, 'POPT', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
+        use = [APPNAME, 'POPT', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
