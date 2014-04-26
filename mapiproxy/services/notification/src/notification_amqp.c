@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <malloc.h>
 #include <syslog.h>
+#include <sys/time.h>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 #include <json-c/json.h>
@@ -281,11 +282,20 @@ broker_consume(struct context *ctx)
 	amqp_rpc_reply_t ret;
 	amqp_envelope_t envelope;
 	amqp_frame_t frame;
+	struct timeval tv;
 
 	amqp_maybe_release_buffers(ctx->broker_conn);
-	ret = amqp_consume_message(ctx->broker_conn, &envelope, NULL, 0);
+
+	/* Set a 250 ms timeout */
+	tv.tv_sec = 0;
+	tv.tv_usec = 250000;
+	ret = amqp_consume_message(ctx->broker_conn, &envelope, &tv, 0);
 	if (ret.reply_type != AMQP_RESPONSE_NORMAL) {
-		if (AMQP_RESPONSE_LIBRARY_EXCEPTION == ret.reply_type && AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
+		if (ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION && AMQP_STATUS_TIMEOUT == ret.library_error) {
+			/* Timeout waiting frame */
+			return;
+		}
+		if (ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION && AMQP_STATUS_UNEXPECTED_STATE == ret.library_error) {
 			/* A frame other than AMQP_BASIC_DELIVER_METHOD was received, read it */
 			if (AMQP_STATUS_OK != amqp_simple_wait_frame(ctx->broker_conn, &frame)) {
 				return;

@@ -14,14 +14,12 @@
 #include "notification_config.h"
 #include "notification_amqp.h"
 
-static bool run = true;
+volatile sig_atomic_t abort_flag = 0;
 
 	static void
-handle_signal(int sig, siginfo_t *siginfo, void *context)
+abort_handler(int sig)
 {
-	syslog(LOG_INFO, "Signal received. Sending PID: %ld, UID: %ld\n",
-		(long)siginfo->si_pid, (long)siginfo->si_uid);
-	run = false;
+	abort_flag = 1;
 }
 
 	int
@@ -124,22 +122,15 @@ main(int argc, const char *argv[])
 	}
 
 	/* Setup signals */
-	sa.sa_sigaction = &handle_signal;
-	sa.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGINT, &sa, NULL) < 0) {
-		syslog(LOG_ERR, "Failed to setup signal handler");
-		run = false;
-	}
-	if (sigaction(SIGTERM, &sa, NULL) < 0) {
-		syslog(LOG_ERR, "Failed to setup signal handler");
-		run = false;
-	}
+	signal(SIGHUP, opt_daemon ? SIG_IGN : abort_handler);
+	signal(SIGINT, abort_handler);
+	signal(SIGTERM, abort_handler);
 
 	/* Write pid to file */
 	pidfile_write(pfh);
 
 	/* Do work */
-	while (run) {
+	while (!abort_flag) {
 		if (!broker_is_alive(ctx)) {
 			if (!broker_connect(ctx)) {
 				usleep(500000);
@@ -154,7 +145,6 @@ main(int argc, const char *argv[])
 				continue;
 			}
 		}
-		syslog(LOG_DEBUG, "Waiting for message");
 		broker_consume(ctx);
 	}
 
