@@ -9,59 +9,49 @@
 #include "notification.h"
 
 	char *
-broker_err(amqp_rpc_reply_t r)
+broker_err(TALLOC_CTX *mem_ctx, amqp_rpc_reply_t r)
 {
-	int ret;
-	char *buffer;
-
-	ret = 0;
+	char *ret;
 	switch (r.reply_type) {
 	case AMQP_RESPONSE_NORMAL:
-		ret = asprintf(&buffer, "normal response");
-		break;
+		return talloc_strdup(mem_ctx, "normal response");
 	case AMQP_RESPONSE_NONE:
-		ret = asprintf(&buffer, "missing RPC reply type");
-		break;
+		return talloc_strdup(mem_ctx, "missing RPC reply type");
 	case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-		ret = asprintf(&buffer, "%s",
+		return talloc_asprintf(mem_ctx, "%s",
 				amqp_error_string2(r.library_error));
-		break;
 	case AMQP_RESPONSE_SERVER_EXCEPTION:
 		switch (r.reply.id) {
 		case AMQP_CONNECTION_CLOSE_METHOD:
 		{
 			amqp_connection_close_t *m;
 			m = (amqp_connection_close_t *) r.reply.decoded;
-			ret = asprintf(&buffer,
+			return talloc_asprintf(mem_ctx,
 				"server connection error %d, message: %.*s",
 				m->reply_code,
 				(int) m->reply_text.len,
 				(char *) m->reply_text.bytes);
-			break;
 		}
 		case AMQP_CHANNEL_CLOSE_METHOD:
 		{
 			amqp_channel_close_t *m;
 			m = (amqp_channel_close_t *) r.reply.decoded;
-			ret = asprintf(&buffer,
+			return talloc_asprintf(mem_ctx,
 				"server channel error %d, message: %.*s",
 				m->reply_code,
 				(int) m->reply_text.len,
 				(char *) m->reply_text.bytes);
-			break;
 		}
 		default:
 		{
-			ret = asprintf(buffer,
+			return talloc_asprintf(mem_ctx,
 				"unknown server error, method id 0x%08X",
 				r.reply.id);
 		}
-		break;
 		}
-		break;
 	}
 
-	return (ret > 0 ? buffer : "Unknown");
+	return talloc_strdup(mem_ctx, "Unknown");
 }
 
 	bool
@@ -85,23 +75,44 @@ broker_disconnect(struct context *ctx)
 
 	syslog(LOG_DEBUG, "Closing broker connection");
 	if (ctx->broker_conn != NULL) {
-		syslog(LOG_DEBUG, "Closing broker channel");
+		syslog(LOG_DEBUG, "Cancel consumer");
+		amqp_basic_cancel(ctx->broker_conn,
+				1,
+				amqp_cstring_bytes(
+					ctx->broker_new_mail_consumer_tag));
+		r = amqp_get_rpc_reply(ctx->broker_conn);
+		if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+			char *err = broker_err(ctx->mem_ctx, r);
+			syslog(LOG_ERR, "Failed to close channel: %s", err);
+			talloc_free(err);
+		}
+
+		syslog(LOG_DEBUG, "Closing broker channel 2");
+		r = amqp_channel_close(ctx->broker_conn,
+				2, AMQP_REPLY_SUCCESS);
+		if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+			char *err = broker_err(ctx->mem_ctx, r);
+			syslog(LOG_ERR, "Failed to close channel: %s", err);
+			talloc_free(err);
+		}
+
+		syslog(LOG_DEBUG, "Closing broker channel 1");
 		r = amqp_channel_close(ctx->broker_conn,
 				1, AMQP_REPLY_SUCCESS);
 		if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-			char *buffer = broker_err(r);
-			syslog(LOG_ERR, "Failed to close channel: %s", buffer);
-			free(buffer);
+			char *err = broker_err(ctx->mem_ctx, r);
+			syslog(LOG_ERR, "Failed to close channel: %s", err);
+			talloc_free(err);
 		}
 
 		syslog(LOG_DEBUG, "Closing broker socket connection");
 		r = amqp_connection_close(ctx->broker_conn,
 				AMQP_REPLY_SUCCESS);
 		if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-			char *buffer = broker_err(r);
+			char *err = broker_err(ctx->mem_ctx, r);
 			syslog(LOG_ERR, "Failed to close connection: %s",
-					buffer);
-			free(buffer);
+					err);
+			talloc_free(err);
 		}
 
 		syslog(LOG_DEBUG, "Destroying broker connection state");
@@ -162,20 +173,31 @@ broker_connect(struct context *ctx)
 			ctx->broker_user,
 			ctx->broker_pass);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to log in: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to log in: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
 
-	syslog(LOG_DEBUG, "Opening new mail channel");
+	syslog(LOG_DEBUG, "Opening channel 1");
 	amqp_channel_open(ctx->broker_conn, 1);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to open channel: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to open channel: %s", err);
+		talloc_free(err);
+		broker_disconnect(ctx);
+		return false;
+	}
+
+	syslog(LOG_DEBUG, "Opening channel 2");
+	amqp_channel_open(ctx->broker_conn, 2);
+	r = amqp_get_rpc_reply(ctx->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to open channel: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
@@ -200,9 +222,9 @@ broker_declare(struct context *ctx)
 		amqp_empty_table);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to declare exchange: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to declare exchange: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
@@ -212,7 +234,7 @@ broker_declare(struct context *ctx)
 	amqp_queue_declare(
 		ctx->broker_conn,
 		1,			/* Channel */
-		amqp_cstring_bytes("new-mail-queue"),
+		amqp_cstring_bytes(ctx->broker_new_mail_queue),
 		0,			/* Passive */
 		0,			/* Durable */
 		0,			/* Exclusive */
@@ -220,9 +242,9 @@ broker_declare(struct context *ctx)
 		amqp_empty_table);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to declare queue: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to declare queue: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
@@ -233,15 +255,15 @@ broker_declare(struct context *ctx)
 	amqp_queue_bind(
 		ctx->broker_conn,
 		1,		/* Channel */
-		amqp_cstring_bytes("new-mail-queue"),		/* queue */
+		amqp_cstring_bytes(ctx->broker_new_mail_queue),
 		amqp_cstring_bytes(ctx->broker_exchange),
-		amqp_cstring_bytes("dovecot-new-mail"),		/* routing key */
+		amqp_cstring_bytes(ctx->broker_new_mail_routing_key),
 		amqp_empty_table);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to bind: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to bind: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
@@ -254,21 +276,24 @@ broker_start_consumer(struct context *ctx)
 {
 	amqp_rpc_reply_t r;
 
+	/* Consumer tag is local to the channel, and the channel local to the
+	 * connection. */
+
 	syslog(LOG_DEBUG, "Starting consumer");
 	amqp_basic_consume(
 		ctx->broker_conn,
-		1,		/* Channel */
-		amqp_cstring_bytes("new-mail-queue"),
-		amqp_empty_bytes,	/* Consumer tag */
-		0,			/* No local */
-		1,			/* No ack */
-		0,			/* exclusive */
+		1,					/* Channel */
+		amqp_cstring_bytes(ctx->broker_new_mail_queue),
+		amqp_cstring_bytes(ctx->broker_new_mail_consumer_tag),
+		0,					/* No local */
+		1,					/* No ack */
+		0,					/* Exclusive */
 		amqp_empty_table);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
-		char *buffer = broker_err(r);
-		syslog(LOG_ERR, "Failed to start consumer: %s", buffer);
-		free(buffer);
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to start consumer: %s", err);
+		talloc_free(err);
 		broker_disconnect(ctx);
 		return false;
 	}
@@ -320,7 +345,7 @@ broker_consume(struct context *ctx)
 						broker_disconnect(ctx);
 						return;
 					default:
-						syslog(LOG_WARNING, "An unexpected method was received on new-mail-queue queue: %d\n", frame.payload.method.id);
+						syslog(LOG_WARNING, "An unexpected method was received on queue: %d\n", frame.payload.method.id);
 						return;
 				}
 			}
@@ -332,31 +357,34 @@ broker_consume(struct context *ctx)
 
 		/* Process the received message */
 		jobj = json_tokener_parse(envelope.message.body.bytes);
+
+		/* Free envelope */
+		amqp_destroy_envelope(&envelope);
+
 		if (jobj != NULL) {
 			juser = json_object_object_get(jobj, "user");
 			jfolder = json_object_object_get(jobj, "folder");
 			juid = json_object_object_get(jobj, "uid");
 
 			if (juser != NULL) {
-				/* TODO memory is managed by json-c */
 				user = json_object_get_string(juser);
 			}
 			if (jfolder != NULL) {
-				/* TODO memory is managed by json-c */
 				folder = json_object_get_string(jfolder);
 			}
 			if (juid != NULL) {
 				uid = json_object_get_int(juid);
 			}
 
-			syslog(LOG_DEBUG, "Received on new-mail-queue: User %s, Folder %s, uid %u", user, folder, uid);
+			syslog(LOG_DEBUG, "Received: User %s, Folder %s, uid %u", user, folder, uid);
+
+			TALLOC_CTX *mem_ctx = talloc_named(ctx->mem_ctx, 0, "register_message");
+			notification_register_message(mem_ctx, ctx, user, folder, uid);
+			talloc_free(mem_ctx);
 
 			/* Free memory */
 			json_object_put(jobj);
 		}
-
-		/* Free envelope */
-		amqp_destroy_envelope(&envelope);
 	}
 
 	return;

@@ -88,16 +88,24 @@ def configure(ctx):
                   msg="Check for librabbitmq 0.4.1",
                   mandatory=True)
 
+    ctx.check_cfg(package='talloc',
+                  args=['talloc >= 2.1.0', '--cflags', '--libs'],
+                  uselib_store='TALLOC',
+                  msg="Check for talloc 2.1.0",
+                  mandatory=True)
+
+
 def build(bld):
     bld.program(
         source = [
             'notification.c',
             'notification_config.c',
 	    'notification_amqp.c',
+	    'notification_register.c',
             ],
         target = 'openchange-notification-service',
         includes = ['.', '..'],
         cflags = ['-ggdb'],
         depends_on = [APPNAME],
         #use = [APPNAME, 'LIBMAPI', 'POPT', 'RABBITMQ'])
-        use = [APPNAME, 'POPT', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
+        use = [APPNAME, 'POPT', 'TALLOC', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])

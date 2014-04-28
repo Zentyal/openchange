@@ -9,6 +9,7 @@
 #include <string.h>
 #include <signal.h>
 #include <bsd/libutil.h>
+#include <talloc.h>
 
 #include "notification.h"
 #include "notification_config.h"
@@ -25,11 +26,12 @@ abort_handler(int sig)
 	int
 main(int argc, const char *argv[])
 {
+	TALLOC_CTX *mem_ctx;
 	const char binary_name[] = "openchange-notification-service";
 	char *pidfile;
 	bool opt_daemon = false;
 	bool opt_debug = false;
-	char *opt_config = NULL; //"/etc/openchange/notification-service.conf";
+	char *opt_config = NULL;
 	int opt;
 	poptContext pc;
 	struct context *ctx;
@@ -53,10 +55,15 @@ main(int argc, const char *argv[])
 	};
 
 	/* Alloc context */
-	ctx = malloc(sizeof (struct context));
+	mem_ctx = talloc_named(NULL, 0, binary_name);
+	if (mem_ctx == NULL) {
+		errx(EXIT_FAILURE, "No memory");
+	}
+	ctx = talloc(mem_ctx, struct context);
 	if (ctx == NULL) {
 		errx(EXIT_FAILURE, "No memory");
 	}
+	ctx->mem_ctx = mem_ctx;
 
 	/* Parse command line arguments */
 	pc = poptGetContext(binary_name, argc, argv, long_options, 0);
@@ -75,6 +82,7 @@ main(int argc, const char *argv[])
 				fprintf(stderr, "Invalid option %s: %s\n",
 					poptBadOption(pc, 0), poptStrerror(opt));
 				poptPrintUsage(pc, stderr, 0);
+				talloc_free(mem_ctx);
 				exit(EXIT_FAILURE);
 		}
 	}
@@ -92,8 +100,10 @@ main(int argc, const char *argv[])
 	}
 
 	/* Check daemon not already running */
-	if (asprintf(&pidfile, "/run/%s.pid", binary_name) == -1) {
+	pidfile = talloc_asprintf(mem_ctx, "/run/%s.pid", binary_name);
+	if (pidfile == NULL) {
 		closelog();
+		talloc_free(mem_ctx);
 		errx(EXIT_FAILURE, "No memory");
 	}
 	pfh = pidfile_open(pidfile, 0644, &otherpid);
@@ -105,7 +115,7 @@ main(int argc, const char *argv[])
 		/* If we cannot create pidfile from other reasons, only warn. */
 		warn("Cannot open or create pidfile %s", pidfile);
 	}
-	free(pidfile);
+	talloc_free(pidfile);
 
 	/* Set file mask */
 	umask(0);
@@ -116,6 +126,7 @@ main(int argc, const char *argv[])
 	if (opt_daemon) {
 		if (daemon(0, 0) < 0) {
 			closelog();
+			talloc_free(mem_ctx);
 			pidfile_remove(pfh);
 			err(EXIT_FAILURE, "Failed to daemonize");
 		}
@@ -157,9 +168,8 @@ main(int argc, const char *argv[])
 	/* Unlink pidfile */
 	pidfile_remove(pfh);
 
-	/* Free context */
-	/* TODO Free context strings */
-	free(ctx);
+	/* Free memory */
+	talloc_free(mem_ctx);
 
 	exit(EXIT_SUCCESS);
 }

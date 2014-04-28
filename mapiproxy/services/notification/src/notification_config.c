@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <err.h>
+#include <talloc.h>
 
 #include "notification.h"
 #include "notification_config.h"
@@ -26,7 +27,7 @@ read_config(struct context *ctx, const char *config_file)
 	}
 
 	if (config_lookup_string(&cfg, "broker_host", &sval)) {
-		ctx->broker_host = strdup(sval);
+		ctx->broker_host = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
 		errx(EXIT_FAILURE, "Missing broker_host "
 				"in config file %s", config_file);
@@ -38,34 +39,50 @@ read_config(struct context *ctx, const char *config_file)
 				"in config file %s", config_file);
 	}
 	if (config_lookup_string(&cfg, "broker_user", &sval)) {
-		ctx->broker_user = strdup(sval);
+		ctx->broker_user = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
 		errx(EXIT_FAILURE, "Missing broker_user "
 				"in config file %s", config_file);
 	}
 	if (config_lookup_string(&cfg, "broker_pass", &sval)) {
-		ctx->broker_pass = strdup(sval);
+		ctx->broker_pass = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
 		errx(EXIT_FAILURE, "Missing broker_pass "
 				"in config file %s", config_file);
 	}
 	if (config_lookup_string(&cfg, "broker_vhost", &sval)) {
-		ctx->broker_vhost = strdup(sval);
+		ctx->broker_vhost = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
-		ctx->broker_vhost = strdup("/");
+		ctx->broker_vhost = talloc_strdup(ctx->mem_ctx, "/");
 	}
 	if (config_lookup_string(&cfg, "broker_exchange", &sval)) {
-		ctx->broker_exchange = strdup(sval);
+		ctx->broker_exchange = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
 		errx(EXIT_FAILURE, "Missing broker_exchange "
 				"in config file %s", config_file);
 	}
 	if (config_lookup_string(&cfg, "broker_new_mail_queue", &sval)) {
-		ctx->broker_new_mail_queue = strdup(sval);
+		ctx->broker_new_mail_queue = talloc_strdup(ctx->mem_ctx, sval);
 	} else {
 		errx(EXIT_FAILURE, "Missing broker_new_mail_queue "
 				"in config file %s", config_file);
 	}
+	if (config_lookup_string(&cfg, "broker_new_mail_routing_key", &sval)) {
+		ctx->broker_new_mail_routing_key = talloc_strdup(
+				ctx->mem_ctx, sval);
+	} else {
+		errx(EXIT_FAILURE, "Missing broker_new_mail_routing_key "
+				"in config file %s", config_file);
+	}
+	if (config_lookup_string(&cfg, "broker_consumer_tag", &sval)) {
+		ctx->broker_new_mail_consumer_tag = talloc_strdup(
+				ctx->mem_ctx, sval);
+	} else {
+		ctx->broker_new_mail_consumer_tag = talloc_asprintf(
+				ctx->mem_ctx, "%s-consumer",
+				ctx->broker_new_mail_queue);
+	}
+
 	config_destroy(&cfg);
 }
 
