@@ -32,7 +32,7 @@
 #include <dlinklist.h>
 #include <fcntl.h>
 #include <errno.h>
-
+#include <amqp.h>
 #include <gen_ndr/server_id.h>
 
 struct mapiproxy {
@@ -58,6 +58,13 @@ struct mapiproxy_module {
 	NTSTATUS		(*pull)(struct dcesrv_call_state *, TALLOC_CTX *, void *);
 	NTSTATUS		(*dispatch)(struct dcesrv_call_state *, TALLOC_CTX *, void *, struct mapiproxy *);
 	NTSTATUS		(*unbind)(struct server_id, uint32_t);
+};
+
+
+struct mapiproxy_broker {
+	struct amqp_connection_info	broker_info;
+	amqp_connection_state_t		broker_conn;
+	amqp_socket_t			*broker_socket;
 };
 
 
@@ -219,6 +226,9 @@ bool mpm_session_set_private_data(struct mpm_session *, void *);
 bool mpm_session_release(struct mpm_session *);
 bool mpm_session_cmp_sub(struct mpm_session *, struct server_id, uint32_t);
 bool mpm_session_cmp(struct mpm_session *, struct dcesrv_call_state *);
+
+/* definitions from dcesrv_mapiproxy_broker. c */
+bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *);
 
 /* definitions from openchangedb.c */
 enum MAPISTATUS openchangedb_get_new_folderID(struct ldb_context *, uint64_t *);

@@ -26,6 +26,8 @@
  */
 
 #include <sys/time.h>
+#include <amqp.h>
+#include <amqp_tcp_socket.h>
 
 #include "mapiproxy/dcesrv_mapiproxy.h"
 #include "mapiproxy/libmapiserver/libmapiserver.h"
@@ -33,6 +35,7 @@
 
 struct exchange_emsmdb_session		*emsmdb_session = NULL;
 void					*openchange_ldb_ctx = NULL;
+struct mapiproxy_broker			*emsmdb_broker = NULL;
 
 static struct exchange_emsmdb_session *dcesrv_find_emsmdb_session(struct GUID *uuid)
 {
@@ -1958,6 +1961,25 @@ static NTSTATUS dcesrv_exchange_emsmdb_init(struct dcesrv_context *dce_ctx)
 	openchange_ldb_ctx = emsmdbp_openchange_ldb_init(dce_ctx->lp_ctx);
 	if (!openchange_ldb_ctx) {
 		smb_panic("unable to initialize 'openchange.ldb' context");
+	}
+
+	/* Connect to broker */
+	const char *broker_uri = lpcfg_parm_string(dce_ctx->lp_ctx, NULL, "dcerpc_mapiproxy", "broker");
+	if (broker_uri) {
+		char *uri = talloc_strdup(dce_ctx, broker_uri);
+		DEBUG(4, ("%s: Broker URI: %s\n", __func__, uri));
+
+		emsmdb_broker = talloc_zero(dce_ctx, struct mapiproxy_broker);
+		if (!emsmdb_broker) {
+			return NT_STATUS_NO_MEMORY;
+		}
+
+		amqp_default_connection_info(&emsmdb_broker->broker_info);
+		if (amqp_parse_url(uri, &emsmdb_broker->broker_info) != AMQP_STATUS_OK) {
+			smb_panic("Unable to parse broker URI");
+		}
+
+		dcesrv_mapiproxy_broker_connect(emsmdb_broker);
 	}
 
 	return NT_STATUS_OK;
