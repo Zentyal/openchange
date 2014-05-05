@@ -89,9 +89,9 @@ def configure(ctx):
                   mandatory=True)
 
     ctx.check_cfg(package='talloc',
-                  args=['talloc >= 2.1.0', '--cflags', '--libs'],
+                  args=['talloc >= 2.0.8', '--cflags', '--libs'],
                   uselib_store='TALLOC',
-                  msg="Check for talloc 2.1.0",
+                  msg="Check for talloc 2.0.8",
                   mandatory=True)
 
 
