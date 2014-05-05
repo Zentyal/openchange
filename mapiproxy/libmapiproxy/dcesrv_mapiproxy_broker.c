@@ -121,6 +121,7 @@ _PUBLIC_ bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *b)
 	}
 
 	/* Channel 0 is not valid in AMQP protocol specification */
+	/* TODO get max channels from broker, see amqp_get_channel_max */
 	b->channels[0] = true;
 	for(i = 1; i < USHRT_MAX; i++) {
 		b->channels[i] = false;
@@ -174,6 +175,141 @@ _PUBLIC_ bool dcesrv_mapiproxy_broker_close_channel(
 		return false;
 	}
 	b->channels[channel] = false;
+
+	return true;
+}
+
+_PUBLIC_ bool dcesrv_mapiproxy_broker_bind_queue(
+		struct mapiproxy_broker *b,
+		amqp_channel_t channel,
+		const char *queue,
+		const char *exchange,
+		const char *routing_key)
+{
+	amqp_rpc_reply_t r;
+
+	if (queue == NULL) {
+		DEBUG(0, ("%s: Failed to bind queue, queue name is NULL", __func__));
+		return false;
+	}
+	if (exchange == NULL) {
+		DEBUG(0, ("%s: Failed to bind queue, exchange name is NULL", __func__));
+		return false;
+	}
+	if (routing_key == NULL) {
+		DEBUG(0, ("%s: Failed to bind queue, routing key is NULL", __func__));
+		return false;
+	}
+
+	/* Declare the exchange */
+	DEBUG(0, ("%s: Declaring exchange %s\n", __func__, exchange));
+	amqp_exchange_declare(
+			b->broker_conn,
+			channel,
+			amqp_cstring_bytes(exchange),
+			amqp_cstring_bytes("direct"),
+			0,	/* Passive */
+			0,	/* Durable */
+			amqp_empty_table);
+	r = amqp_get_rpc_reply(b->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Error declaring exchange: %s\n", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
+
+	/* Declare the queue */
+	DEBUG(0, ("%s: Declaring queue '%s'\n", __func__, queue));
+	amqp_queue_declare(
+			b->broker_conn,
+			1,			/* Channel */
+			amqp_cstring_bytes(queue),
+			0,			/* Passive */
+			0,			/* Durable */
+			0,			/* Exclusive */
+			1,			/* Auto delete */
+			amqp_empty_table);
+	r = amqp_get_rpc_reply(b->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Failed to declare queue: %s", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
+
+	/* Bind queue and exchange with routing key */
+	DEBUG(0, ("%s: Binding queue '%s' with routing key '%s'\n", __func__, queue, routing_key));
+	amqp_queue_bind(
+			b->broker_conn,
+			channel,
+			amqp_cstring_bytes(queue),
+			amqp_cstring_bytes(exchange),
+			amqp_cstring_bytes(routing_key),
+			amqp_empty_table);
+	r = amqp_get_rpc_reply(b->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("Failed to bind queue: %s", msg));
+		talloc_free(msg);
+		return false;
+	}
+
+	return true;
+}
+
+_PUBLIC_ bool dcesrv_mapiproxy_broker_poll_queue(
+		struct mapiproxy_broker *b,
+		amqp_channel_t channel,
+		const char *queue,
+		amqp_boolean_t ack)
+{
+	amqp_rpc_reply_t r;
+
+	if (b == NULL) {
+		return false;
+	}
+	if (channel == 0) {
+		return false;
+	}
+	if (queue == NULL) {
+		return false;
+	}
+
+	r = amqp_basic_get(b->broker_conn, channel,
+			amqp_cstring_bytes(queue), ack);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Error polling queue: %s\n", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
+
+	if (r.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
+		DEBUG(0, ("%s: NO MESSAGES\n", __func__));
+		return false;
+	}
+
+	/* TODO Check if message is basic.publish, any other should be logged
+	 * and discarded */
+
+	return true;
+}
+
+_PUBLIC_ bool dcesrv_mapiproxy_broker_read_message(
+		struct mapiproxy_broker *b,
+		amqp_channel_t channel,
+		amqp_message_t *message)
+{
+	amqp_rpc_reply_t r;
+
+	r = amqp_read_message(b->broker_conn, channel, message, 0);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Error reading message: %s\n", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
 
 	return true;
 }

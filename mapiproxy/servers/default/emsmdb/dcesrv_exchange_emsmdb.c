@@ -9,12 +9,12 @@
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -99,7 +99,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 		wire_handle.handle_type = EXCHANGE_HANDLE_EMSMDB;
 		wire_handle.uuid = GUID_zero();
 		*r->out.handle = wire_handle;
-		
+
 		r->out.pcmsPollsMax = talloc_zero(mem_ctx, uint32_t);
 		r->out.pcRetry = talloc_zero(mem_ctx, uint32_t);
 		r->out.pcmsRetryDelay = talloc_zero(mem_ctx, uint32_t);
@@ -124,7 +124,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 	}
 
 	/* Step 1. Initialize the emsmdbp context */
-	emsmdbp_ctx = emsmdbp_init(dce_call->conn->dce_ctx->lp_ctx, 
+	emsmdbp_ctx = emsmdbp_init(dce_call->conn->dce_ctx->lp_ctx,
 				   dcesrv_call_account_name(dce_call),
 				   openchange_ldb_ctx,
 				   emsmdb_broker);
@@ -167,7 +167,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 	/* Step 6. Fill EcDoConnect reply */
 	handle = dcesrv_handle_new(dce_call->context, EXCHANGE_HANDLE_EMSMDB);
 	OPENCHANGE_RETVAL_IF(!handle, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
-	
+
 	handle->data = (void *) emsmdbp_ctx;
 	*r->out.handle = handle->wire_handle;
 
@@ -207,7 +207,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 	/* Search for an existing session and increment ref_count, otherwise create it */
         session = dcesrv_find_emsmdb_session(&handle->wire_handle.uuid);
         if (session) {
-                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n", 
+                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n",
                           session->session->context_id));
                 mpm_session_increment_ref_count(session->session);
         }
@@ -267,7 +267,7 @@ static enum MAPISTATUS dcesrv_EcDoDisconnect(struct dcesrv_call_state *dce_call,
                         ret = mpm_session_release(session->session);
                         if (ret == true) {
                                 DLIST_REMOVE(emsmdb_session, session);
-                                DEBUG(5, ("[%s:%d]: Session found and released\n", 
+                                DEBUG(5, ("[%s:%d]: Session found and released\n",
                                           __FUNCTION__, __LINE__));
                         } else {
                                 DEBUG(5, ("[%s:%d]: Session found and ref_count decreased\n",
@@ -287,14 +287,14 @@ static enum MAPISTATUS dcesrv_EcDoDisconnect(struct dcesrv_call_state *dce_call,
 	return MAPI_E_SUCCESS;
 }
 
-static bool emsmdbp_fill_notification(TALLOC_CTX *mem_ctx, 
+static bool emsmdbp_fill_notification(TALLOC_CTX *mem_ctx,
                                       struct emsmdbp_context *emsmdbp_ctx,
                                       struct EcDoRpc_MAPI_REPL *mapi_repl,
                                       struct mapistore_subscription *subscription,
                                       struct mapistore_notification *notification,
                                       uint16_t *sizep)
 {
-	bool			success = true;	
+	bool			success = true;
         struct Notify_repl      *reply;
         struct emsmdbp_object   *handle_object;
         struct emsmdbp_object_table *table;
@@ -588,7 +588,7 @@ static bool emsmdbp_fill_notification(TALLOC_CTX *mem_ctx,
 				reply->NotificationData.MessageMoveNotification.OldFID = notification->parameters.object_parameters.old_folder_id;
                                 reply->NotificationData.MessageMoveNotification.OldMID = notification->parameters.object_parameters.old_object_id;
 				break;
-				
+
                         default: /* MAPISTORE_OBJECT_DELETED */
                                 reply->NotificationData.MessageDeletedNotification.FID = notification->parameters.object_parameters.folder_id;
                                 reply->NotificationData.MessageDeletedNotification.MID = notification->parameters.object_parameters.object_id;
@@ -645,7 +645,7 @@ end:
 	return success;
 }
 
-static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx, 
+static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 							 struct emsmdbp_context *emsmdbp_ctx,
 							 struct mapi_request *mapi_request)
 {
@@ -683,7 +683,7 @@ static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 	/* Step 2. Process serialized MAPI requests */
 	mapi_response->mapi_repl = talloc_zero(mem_ctx, struct EcDoRpc_MAPI_REPL);
 	for (i = 0, idx = 0, size = 0; mapi_request->mapi_req[i].opnum != 0; i++) {
-		DEBUG(0, ("MAPI Rop: 0x%.2x (%d)\n", mapi_request->mapi_req[i].opnum, size));
+		DEBUG(3, ("MAPI Rop: 0x%.2x (%d)\n", mapi_request->mapi_req[i].opnum, size));
 
 		if (mapi_request->mapi_req[i].opnum != op_MAPI_Release) {
 			mapi_response->mapi_repl = talloc_realloc(mem_ctx, mapi_response->mapi_repl,
@@ -692,7 +692,7 @@ static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 
 		switch (mapi_request->mapi_req[i].opnum) {
 		case op_MAPI_Release: /* 0x01 */
-			retval = EcDoRpc_RopRelease(mem_ctx, emsmdbp_ctx, 
+			retval = EcDoRpc_RopRelease(mem_ctx, emsmdbp_ctx,
 						    &(mapi_request->mapi_req[i]),
 						    mapi_request->handles, &size);
 			break;
@@ -741,7 +741,7 @@ static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 		case op_MAPI_GetPropList: /* 0x9 */
 			retval = EcDoRpc_RopGetPropertiesList(mem_ctx, emsmdbp_ctx,
 							      &(mapi_request->mapi_req[i]),
-							      &(mapi_response->mapi_repl[idx]),	
+							      &(mapi_response->mapi_repl[idx]),
 							      mapi_response->handles, &size);
 			break;
 		case op_MAPI_SetProps: /* 0x0a */
@@ -1035,19 +1035,19 @@ static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 		/* op_MAPI_FastTransferSourceCopyMessages: 0x4b */
 		/* op_MAPI_FastTransferSourceCopyFolder: 0x4c */
 		case op_MAPI_FastTransferSourceCopyTo: /* 0x4d */
-			retval = EcDoRpc_RopFastTransferSourceCopyTo(mem_ctx, emsmdbp_ctx, 
+			retval = EcDoRpc_RopFastTransferSourceCopyTo(mem_ctx, emsmdbp_ctx,
 								     &(mapi_request->mapi_req[i]),
 								     &(mapi_response->mapi_repl[idx]),
 								     mapi_response->handles, &size);
 			break;
 		case op_MAPI_FastTransferSourceGetBuffer: /* 0x4e */
-			retval = EcDoRpc_RopFastTransferSourceGetBuffer(mem_ctx, emsmdbp_ctx, 
+			retval = EcDoRpc_RopFastTransferSourceGetBuffer(mem_ctx, emsmdbp_ctx,
 									&(mapi_request->mapi_req[i]),
 									&(mapi_response->mapi_repl[idx]),
 									mapi_response->handles, &size);
 			break;
 		case op_MAPI_FindRow: /* 0x4f */
-			retval = EcDoRpc_RopFindRow(mem_ctx, emsmdbp_ctx, 
+			retval = EcDoRpc_RopFindRow(mem_ctx, emsmdbp_ctx,
 						    &(mapi_request->mapi_req[i]),
 						    &(mapi_response->mapi_repl[idx]),
 						    mapi_response->handles, &size);
@@ -1067,7 +1067,7 @@ static struct mapi_response *EcDoRpc_process_transaction(TALLOC_CTX *mem_ctx,
 								    &(mapi_response->mapi_repl[idx]),
 								    mapi_response->handles, &size);
 			break;
-		/* op_MAPI_UpdateDeferredActionMessages: 0x57 */ 
+		/* op_MAPI_UpdateDeferredActionMessages: 0x57 */
 		case op_MAPI_EmptyFolder: /* 0x58 */
 		retval = EcDoRpc_RopEmptyFolder(mem_ctx, emsmdbp_ctx,
 						&(mapi_request->mapi_req[i]),
@@ -1267,11 +1267,26 @@ notif:
 			talloc_free(subscription_holder);
 			idx++;
 		}
-                
+
 		DLIST_REMOVE(emsmdbp_ctx->mstore_ctx->notifications, notification_holder);
 		talloc_free(notification_holder);
 	}
-	
+
+	/* Step 4. Fill queued notifications */
+	while (dcesrv_mapiproxy_broker_poll_queue(emsmdbp_ctx->broker,
+			emsmdbp_ctx->broker_channel,
+			emsmdbp_ctx->broker_notification_queue,
+			false)) {
+		/* We have queued notifications */
+		amqp_message_t message;
+		if (dcesrv_mapiproxy_broker_read_message(
+				emsmdbp_ctx->broker,
+				emsmdbp_ctx->broker_channel,
+				&message)) {
+			/* Free memory */
+			amqp_destroy_message(&message);
+		}
+	}
 #if 0
 	{
 		enum mapistore_error	mretval;
@@ -1290,10 +1305,10 @@ notif:
 			if (mretval == MAPISTORE_SUCCESS) {
 				for (el = nlist; el->notification; el = el->next) {
 					if (needs_realloc) {
-						mapi_response->mapi_repl = talloc_realloc(mem_ctx, mapi_response->mapi_repl, 
+						mapi_response->mapi_repl = talloc_realloc(mem_ctx, mapi_response->mapi_repl,
 											  struct EcDoRpc_MAPI_REPL, idx + 2);
 					}
-					needs_realloc = emsmdbp_fill_notification(mapi_response->mapi_repl, emsmdbp_ctx, 
+					needs_realloc = emsmdbp_fill_notification(mapi_response->mapi_repl, emsmdbp_ctx,
 										  &(mapi_response->mapi_repl[idx]),
 										  sel->subscription, el->notification, &size);
 					idx++;
@@ -1307,7 +1322,7 @@ notif:
 	if (mapi_response->mapi_repl) {
 		mapi_response->mapi_repl[idx].opnum = 0;
 	}
-	
+
 	/* Step 4. Fill mapi_response structure */
 	handles_length = mapi_request->mapi_len - mapi_request->length;
 	mapi_response->length = size + sizeof (mapi_response->length);
@@ -1442,7 +1457,7 @@ static enum MAPISTATUS dcesrv_EcRRegisterPushNotification(struct dcesrv_call_sta
 		r->out.handle = r->in.handle;
 		/* FIXME: Create a notification object and return associated handle */
 		*r->out.hNotification = 244;
-	} 
+	}
 
 	return MAPI_E_SUCCESS;
 }
@@ -1667,7 +1682,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 		r->out.rgwBestVersion[0] = 0x000B;
 		r->out.rgwBestVersion[1] = 0x8000;
 		r->out.rgwBestVersion[2] = 0x0000;
-		
+
 		r->out.result = MAPI_E_VERSION;
 	} else {
 		r->out.rgwBestVersion[0] = r->in.rgwClientVersion[0];
@@ -1680,7 +1695,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 	/* Search for an existing session and increment ref_count, otherwise create it */
         session = dcesrv_find_emsmdb_session(&handle->wire_handle.uuid);
         if (session) {
-                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n", 
+                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n",
                           session->session->context_id));
                 mpm_session_increment_ref_count(session->session);
         }
@@ -1692,7 +1707,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 		session->pullTimeStamp = *r->out.pulTimeStamp;
 		session->session = mpm_session_init((TALLOC_CTX *)emsmdb_session, dce_call);
 		OPENCHANGE_RETVAL_IF(!session->session, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
-		
+
 		session->uuid = handle->wire_handle.uuid;
 
 		mpm_session_set_private_data(session->session, (void *) emsmdbp_ctx);
@@ -2004,7 +2019,7 @@ static NTSTATUS dcesrv_exchange_emsmdb_unbind(struct server_id server_id, uint32
 	/* struct exchange_emsmdb_session	*session; */
 	/* bool ret; */
 
-	DEBUG (0, ("dcesrv_exchange_emsmdb_unbind\n"));
+	DEBUG (3, ("dcesrv_exchange_emsmdb_unbind\n"));
 
 	/* session = dcesrv_find_emsmdb_session_by_server_id(&server_id, context_id); */
 	/* if (session) { */

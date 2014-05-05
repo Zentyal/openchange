@@ -59,6 +59,7 @@ struct emsmdbp_context {
 	TALLOC_CTX				*mem_ctx;
 	struct mapiproxy_broker			*broker;
 	amqp_channel_t				broker_channel;
+	char					*broker_notification_queue;
 };
 
 struct exchange_emsmdb_session {

@@ -163,11 +163,34 @@ _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 
 	/* Reference global broker within current context */
 	emsmdbp_ctx->broker = broker;
+	talloc_reference(emsmdbp_ctx, broker);
 
-	/* Open channel */
+	/* Get the first broker free channel */
 	if ((channel = dcesrv_mapiproxy_broker_get_free_channel(broker)) != 0) {
+		/* Open the channel */
 		if (dcesrv_mapiproxy_broker_open_channel(broker, channel)) {
+			char *queue, *routing_key;
+			const char *exchange;
+
 			emsmdbp_ctx->broker_channel = channel;
+
+			/* Build the user queue name */
+			queue = talloc_asprintf(mem_ctx, "%s_notification_queue", username);
+			exchange = talloc_strdup(mem_ctx, "exchange"); // TODO
+			exchange = lpcfg_parm_string(lp_ctx, NULL, "dcerpc_mapiproxy", "broker_exchange");
+			routing_key = talloc_asprintf(mem_ctx, "%s_notification", username);
+
+			/* Declare and bind queue */
+			if (dcesrv_mapiproxy_broker_bind_queue(
+					broker,
+					channel,
+					queue,
+					exchange,
+					routing_key)) {
+				emsmdbp_ctx->broker_notification_queue = queue;
+			} else {
+				emsmdbp_ctx->broker_notification_queue = NULL;
+			}
 		} else {
 			/* Error opening channel */
 			emsmdbp_ctx->broker_channel = 0;
@@ -206,12 +229,21 @@ _PUBLIC_ bool emsmdbp_destructor(void *data)
 
 	if (!emsmdbp_ctx) return false;
 
+	if (emsmdbp_ctx->broker_channel != 0) {
+		dcesrv_mapiproxy_broker_close_channel(emsmdbp_ctx->broker,
+				emsmdbp_ctx->broker_channel);
+	}
+
+	if (emsmdbp_ctx->broker_notification_queue) {
+		talloc_free(emsmdbp_ctx->broker_notification_queue);
+	}
+
+	if (emsmdbp_ctx->broker) {
+		talloc_unlink(emsmdbp_ctx, emsmdbp_ctx->broker);
+	}
+
 	talloc_unlink(emsmdbp_ctx, emsmdbp_ctx->oc_ctx);
 	talloc_free(emsmdbp_ctx->mem_ctx);
-
-	if (emsmdbp_ctx->broker && emsmdbp_ctx->broker_channel != 0) {
-		dcesrv_mapiproxy_broker_close_channel(emsmdbp_ctx-> broker, emsmdbp_ctx->broker_channel);
-	}
 
 	DEBUG(0, ("[%s:%d]: emsmdbp_ctx found and released\n", __FUNCTION__, __LINE__));
 
