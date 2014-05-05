@@ -27,12 +27,13 @@ notification_publish(TALLOC_CTX *mem_ctx, struct register_context *ctx)
 	body.bytes = NULL;
 	body.len = 0;
 
-	syslog(LOG_DEBUG, "Publishing notification for user %s", ctx->user);
+	char *key = talloc_asprintf(mem_ctx, "%s_notification", ctx->user);
+	syslog(LOG_DEBUG, "Publishing to exchange '%s' with routing key '%s'", ctx->broker_exchange, key);
 	ret = amqp_basic_publish(
 		ctx->broker_conn,
 		ctx->broker_channel,
                 amqp_cstring_bytes(ctx->broker_exchange),
-		amqp_cstring_bytes(ctx->broker_routing_key),
+		amqp_cstring_bytes(key),
                 0,				/* Mandatory */
 		0,				/* Inmediate */
                 NULL,
