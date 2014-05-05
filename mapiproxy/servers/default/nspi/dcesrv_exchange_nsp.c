@@ -1397,7 +1397,7 @@ static NTSTATUS dcesrv_exchange_nsp_init(struct dcesrv_context *dce_ctx)
  */
 static NTSTATUS dcesrv_exchange_nsp_unbind(struct server_id server_id, uint32_t context_id)
 {
-	DEBUG (0, ("dcesrv_exchange_nsp_unbind\n"));
+	DEBUG (3, ("dcesrv_exchange_nsp_unbind\n"));
 	return NT_STATUS_OK;
 }
 
