@@ -54,6 +54,7 @@ static int emsmdbp_mapi_store_destructor(void *data)
 	struct mapistore_context *mstore_ctx = (struct mapistore_context *) data;
 
 	mapistore_release(mstore_ctx);
+
 	DEBUG(6, ("[%s:%d]: MAPISTORE context released\n", __FUNCTION__, __LINE__));
 	return true;
 }
@@ -91,12 +92,14 @@ static int emsmdbp_mapi_handles_destructor(void *data)
  */
 _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 					      const char *username,
-					      void *ldb_ctx)
+					      void *ldb_ctx,
+					      struct mapiproxy_broker *broker)
 {
 	TALLOC_CTX		*mem_ctx;
 	struct emsmdbp_context	*emsmdbp_ctx;
 	struct tevent_context	*ev;
 	enum mapistore_error	ret;
+	amqp_channel_t		channel;
 
 	/* Sanity Checks */
 	if (!lp_ctx) return NULL;
@@ -158,6 +161,22 @@ _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 	}
 	talloc_set_destructor((void *)emsmdbp_ctx->handles_ctx, (int (*)(void *))emsmdbp_mapi_handles_destructor);
 
+	/* Reference global broker within current context */
+	emsmdbp_ctx->broker = broker;
+
+	/* Open channel */
+	if ((channel = dcesrv_mapiproxy_broker_get_free_channel(broker)) != 0) {
+		if (dcesrv_mapiproxy_broker_open_channel(broker, channel)) {
+			emsmdbp_ctx->broker_channel = channel;
+		} else {
+			/* Error opening channel */
+			emsmdbp_ctx->broker_channel = 0;
+		}
+	} else {
+		DEBUG(0, ("%s: No free broker channels available\n", __func__));
+		emsmdbp_ctx->broker_channel = 0;
+	}
+
 	return emsmdbp_ctx;
 }
 
@@ -189,6 +208,10 @@ _PUBLIC_ bool emsmdbp_destructor(void *data)
 
 	talloc_unlink(emsmdbp_ctx, emsmdbp_ctx->oc_ctx);
 	talloc_free(emsmdbp_ctx->mem_ctx);
+
+	if (emsmdbp_ctx->broker && emsmdbp_ctx->broker_channel != 0) {
+		dcesrv_mapiproxy_broker_close_channel(emsmdbp_ctx-> broker, emsmdbp_ctx->broker_channel);
+	}
 
 	DEBUG(0, ("[%s:%d]: emsmdbp_ctx found and released\n", __FUNCTION__, __LINE__));
 

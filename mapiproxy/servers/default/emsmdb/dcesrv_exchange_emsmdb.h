@@ -57,6 +57,8 @@ struct emsmdbp_context {
 	struct mapi_handles_context		*handles_ctx;
 
 	TALLOC_CTX				*mem_ctx;
+	struct mapiproxy_broker			*broker;
+	amqp_channel_t				broker_channel;
 };
 
 struct exchange_emsmdb_session {
@@ -293,7 +295,7 @@ NTSTATUS	samba_init_module(void);
 struct ldb_context *samdb_connect(TALLOC_CTX *, struct tevent_context *, struct loadparm_context *, struct auth_session_info *, int);
 
 /* definitions from emsmdbp.c */
-struct emsmdbp_context	*emsmdbp_init(struct loadparm_context *, const char *, void *);
+struct emsmdbp_context	*emsmdbp_init(struct loadparm_context *, const char *, void *, struct mapiproxy_broker *);
 void			*emsmdbp_openchange_ldb_init(struct loadparm_context *);
 bool			emsmdbp_destructor(void *);
 bool			emsmdbp_verify_user(struct dcesrv_call_state *, struct emsmdbp_context *);

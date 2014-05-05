@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <amqp.h>
 #include <gen_ndr/server_id.h>
+#include <limits.h>
 
 struct mapiproxy {
 	bool			norelay;
@@ -65,6 +66,7 @@ struct mapiproxy_broker {
 	struct amqp_connection_info	broker_info;
 	amqp_connection_state_t		broker_conn;
 	amqp_socket_t			*broker_socket;
+	bool				channels[USHRT_MAX];
 };
 
 
@@ -229,6 +231,9 @@ bool mpm_session_cmp(struct mpm_session *, struct dcesrv_call_state *);
 
 /* definitions from dcesrv_mapiproxy_broker. c */
 bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *);
+amqp_channel_t dcesrv_mapiproxy_broker_get_free_channel(struct mapiproxy_broker *);
+bool dcesrv_mapiproxy_broker_open_channel(struct mapiproxy_broker *, amqp_channel_t);
+bool dcesrv_mapiproxy_broker_close_channel(struct mapiproxy_broker *, amqp_channel_t);
 
 /* definitions from openchangedb.c */
 enum MAPISTATUS openchangedb_get_new_folderID(struct ldb_context *, uint64_t *);

@@ -25,10 +25,55 @@
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 
+static char * broker_err(TALLOC_CTX *mem_ctx, amqp_rpc_reply_t r)
+{
+	switch (r.reply_type) {
+	case AMQP_RESPONSE_NORMAL:
+		return talloc_strdup(mem_ctx, "normal response");
+	case AMQP_RESPONSE_NONE:
+		return talloc_strdup(mem_ctx, "missing RPC reply type");
+	case AMQP_RESPONSE_LIBRARY_EXCEPTION:
+		return talloc_asprintf(mem_ctx, "%s",
+				amqp_error_string2(r.library_error));
+	case AMQP_RESPONSE_SERVER_EXCEPTION:
+		switch (r.reply.id) {
+		case AMQP_CONNECTION_CLOSE_METHOD:
+		{
+			amqp_connection_close_t *m;
+			m = (amqp_connection_close_t *) r.reply.decoded;
+			return talloc_asprintf(mem_ctx,
+				"server connection error %d, message: %.*s",
+				m->reply_code,
+				(int) m->reply_text.len,
+				(char *) m->reply_text.bytes);
+		}
+		case AMQP_CHANNEL_CLOSE_METHOD:
+		{
+			amqp_channel_close_t *m;
+			m = (amqp_channel_close_t *) r.reply.decoded;
+			return talloc_asprintf(mem_ctx,
+				"server channel error %d, message: %.*s",
+				m->reply_code,
+				(int) m->reply_text.len,
+				(char *) m->reply_text.bytes);
+		}
+		default:
+		{
+			return talloc_asprintf(mem_ctx,
+				"unknown server error, method id 0x%08X",
+				r.reply.id);
+		}
+		}
+	}
+
+	return talloc_strdup(mem_ctx, "Unknown");
+}
+
 _PUBLIC_ bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *b)
 {
 	amqp_socket_t *broker_socket;
 	amqp_rpc_reply_t r;
+	amqp_channel_t i;
 	int status;
 
 	DEBUG(8, ("%s: Initializing broker connection\n", __func__));
@@ -74,6 +119,61 @@ _PUBLIC_ bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *b)
 		//TODO broker_disconnect();
 		return false;
 	}
+
+	/* Channel 0 is not valid in AMQP protocol specification */
+	b->channels[0] = true;
+	for(i = 1; i < USHRT_MAX; i++) {
+		b->channels[i] = false;
+	}
+
+	return true;
+}
+
+_PUBLIC_ amqp_channel_t dcesrv_mapiproxy_broker_get_free_channel(
+		struct mapiproxy_broker *b)
+{
+	amqp_channel_t i;
+	for (i = 1; i < USHRT_MAX; i++) {
+		if (!b->channels[i])
+			return i;
+	}
+	return 0;
+}
+
+_PUBLIC_ bool dcesrv_mapiproxy_broker_open_channel(
+		struct mapiproxy_broker *b,
+		amqp_channel_t channel)
+{
+	amqp_rpc_reply_t r;
+	amqp_channel_open_ok_t *c;
+
+	DEBUG(0, ("%s: Opening broker channel %d\n", __func__, channel));
+	if ((c = amqp_channel_open(b->broker_conn, channel)) == NULL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Error opening channel: %s\n", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
+	b->channels[channel] = true;
+
+	return true;
+}
+
+_PUBLIC_ bool dcesrv_mapiproxy_broker_close_channel(
+		struct mapiproxy_broker *b,
+		amqp_channel_t channel)
+{
+	amqp_rpc_reply_t r;
+
+	DEBUG(0, ("%s: Closing broker channel %d\n", __func__, channel));
+	r = amqp_channel_close(b->broker_conn, channel, AMQP_REPLY_SUCCESS);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *msg = broker_err(b, r);
+		DEBUG(0, ("%s: Error closing channel: %s\n", __func__, msg));
+		talloc_free(msg);
+		return false;
+	}
+	b->channels[channel] = false;
 
 	return true;
 }
