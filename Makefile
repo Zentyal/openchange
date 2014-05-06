@@ -769,6 +769,7 @@ mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION):	mapiproxy/libmapiproxy/dc
 							mapiproxy/libmapiproxy/openchangedb_property.po		\
 							mapiproxy/libmapiproxy/backends/openchangedb_ldb.po	\
 							mapiproxy/libmapiproxy/backends/openchangedb_mysql.po	\
+							mapiproxy/libmapiproxy/backends/openchangedb_logger.po	\
 							mapiproxy/libmapiproxy/mapi_handles.po			\
 							mapiproxy/libmapiproxy/entryid.po			\
 							mapiproxy/libmapiproxy/modules.po			\
@@ -1387,6 +1388,7 @@ bin/unittest: test/test_suites/libmapistore/indexing.o \
 	test/test_suites/libmapistore/namedprops_mysql.o \
 	test/test_suites/libmapistore/namedprops_ldb.o \
 	test/test_suites/libmapiproxy/openchangedb.o \
+	test/test_suites/libmapiproxy/openchangedb_logger.o \
 	test/openchange_test_suite.o \
 	test/test_common.c \
 	mapiproxy/util/mysql.o \
@@ -1396,6 +1398,7 @@ bin/unittest: test/test_suites/libmapistore/indexing.o \
 	mapiproxy/libmapiproxy/openchangedb_property.o \
 	mapiproxy/libmapiproxy/backends/openchangedb_ldb.o \
 	mapiproxy/libmapiproxy/backends/openchangedb_mysql.o \
+	mapiproxy/libmapiproxy/backends/openchangedb_logger.o \
 	mapiproxy/libmapistore/mapistore_interface.o \
 	mapiproxy/libmapistore/mapistore_processing.o \
 	mapiproxy/libmapistore/mapistore_backend.o \
