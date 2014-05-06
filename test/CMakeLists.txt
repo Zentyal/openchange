@@ -41,6 +41,7 @@ SET(OPENCHANGE_TEST_SRCS
     ${CMAKE_SOURCE_DIR}/../mapiproxy/libmapiproxy/openchangedb_property.c
     ${CMAKE_SOURCE_DIR}/../mapiproxy/libmapiproxy/backends/openchangedb_ldb.c
     ${CMAKE_SOURCE_DIR}/../mapiproxy/libmapiproxy/backends/openchangedb_mysql.c
+    ${CMAKE_SOURCE_DIR}/../mapiproxy/libmapiproxy/backends/openchangedb_logger.c
     # -------------------------------------------------------------------------
     # Util
     # -------------------------------------------------------------------------
@@ -49,6 +50,7 @@ SET(OPENCHANGE_TEST_SRCS
     # Test suites
     # -------------------------------------------------------------------------
     ${CMAKE_SOURCE_DIR}/test_suites/libmapiproxy/openchangedb.c
+    ${CMAKE_SOURCE_DIR}/test_suites/libmapiproxy/openchangedb_logger.c
     # =========================================================================
 )
 
@@ -73,7 +75,7 @@ ADD_DEFINITIONS(
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/..
-    ${SAMBA_PREFIX}/include
+    /usr/include/samba-4.0/
 )
 
 LINK_DIRECTORIES(
