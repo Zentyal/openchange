@@ -4,6 +4,7 @@
 #include <talloc.h>
 #include <syslog.h>
 #include <amqp.h>
+#include <json-c/json.h>
 
 #include <mapistore/mapistore.h>
 #include <mapistore/mapistore_errors.h>
@@ -13,14 +14,24 @@
 
 	void
 notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
-		const char *username)
+		const char *username, uint64_t mid, uint64_t fid,
+		const char *message_uri)
 {
 	int ret;
-	amqp_bytes_t body;
 	amqp_rpc_reply_t r;
+	json_object *jobj, *juser, *jmid, *jfid, *juri;
 
-	body.bytes = NULL;
-	body.len = 0;
+	/* Build the body */
+	jobj = json_object_new_object();
+	juser = json_object_new_string(username);
+	jmid = json_object_new_int64(mid);
+	jfid = json_object_new_int64(fid);
+	juri = json_object_new_string(message_uri);
+
+	json_object_object_add(jobj, "user", juser);
+	json_object_object_add(jobj, "mid", jmid);
+	json_object_object_add(jobj, "fid", jfid);
+	json_object_object_add(jobj, "uri", juri);
 
 	/* Build the routing key */
 	char *key = talloc_asprintf(mem_ctx, "%s_notification", username);
@@ -36,10 +47,15 @@ notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
                 0,				/* Mandatory */
 		0,				/* Inmediate */
                 NULL,
-                body);
+                amqp_cstring_bytes(json_object_to_json_string(jobj)));
+
 	if (ret != AMQP_STATUS_OK) {
 		syslog(LOG_ERR,	"Error publishing message: %s",
 				amqp_error_string2(ret));
+
+		/* Free memory */
+		json_object_put(jobj);
+
 		return;
 	}
 
@@ -49,8 +65,15 @@ notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
 		char *err = broker_err(mem_ctx, r);
 		syslog(LOG_ERR, "Error publishing message: %s", err);
 		talloc_free(err);
+
+		/* Free memory */
+		json_object_put(jobj);
+
 		return;
 	}
+
+	/* Free memory */
+	json_object_put(jobj);
 }
 
 
@@ -166,13 +189,37 @@ fetch_message_uri(TALLOC_CTX *mem_ctx, const char *backend,
 	return uri;
 }
 
+bool fetch_folder_fid(struct ldb_context *ldb_ctx,
+		struct mapistore_context *mstore_ctx,
+		const char *username,
+		const char *folder_uri,
+		uint64_t *fid)
+{
+	int ret;
+	bool softdeleted;
+
+	ret = openchangedb_get_fid(ldb_ctx, folder_uri, fid);
+	if (ret != MAPI_E_SUCCESS) {
+		ret = mapistore_indexing_record_get_fmid(
+				mstore_ctx, username, folder_uri, false,
+						 fid, &softdeleted);
+		if (ret != MAPISTORE_SUCCESS || softdeleted == true) {
+			syslog(LOG_ERR, "Failed to fetch fid for folder %s",
+					folder_uri);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 	void
 notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
 		const char *username, const char *folder, uint32_t message_id)
 {
 	int ret;
 	struct indexing_context_list *ictxp;
-	uint64_t mid;
+	uint64_t mid, fid;
 	bool softdeleted;
 	char *message_id_str;
 	char *folder_uri;
@@ -242,8 +289,15 @@ notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
 	syslog(LOG_DEBUG, "Message registered for user %s (mid=0x%"PRIx64
 			", uri=%s)", username, mid, message_uri);
 
+	/* Get the fid from the folder URI */
+	ret = fetch_folder_fid(ctx->ocdb_ctx, ctx->mstore_ctx, username,
+			folder_uri, &fid);
+	if (ret) {
+		return;
+	}
+
 	/* Publish notification on the user specific queue */
-	notification_publish(mem_ctx, ctx, username);
+	notification_publish(mem_ctx, ctx, username, mid, fid, message_uri);
 
         return;
 }
