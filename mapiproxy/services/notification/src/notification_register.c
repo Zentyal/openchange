@@ -1,24 +1,19 @@
 #include <stdint.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <talloc.h>
 #include <syslog.h>
 #include <amqp.h>
 
+#include <mapistore/mapistore.h>
+#include <mapistore/mapistore_errors.h>
+#include <mapistore/mapistore_mgmt.h>
+
 #include "notification.h"
 
-struct register_context
-{
-	const char *user;
-	const char *folder;
-	uint32_t   uid;
-
-	amqp_connection_state_t broker_conn;
-	amqp_channel_t broker_channel;
-	const char *broker_exchange;
-	const char *broker_routing_key;
-};
-
 	void
-notification_publish(TALLOC_CTX *mem_ctx, struct register_context *ctx)
+notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
+		const char *username)
 {
 	int ret;
 	amqp_bytes_t body;
@@ -27,11 +22,15 @@ notification_publish(TALLOC_CTX *mem_ctx, struct register_context *ctx)
 	body.bytes = NULL;
 	body.len = 0;
 
-	char *key = talloc_asprintf(mem_ctx, "%s_notification", ctx->user);
-	syslog(LOG_DEBUG, "Publishing to exchange '%s' with routing key '%s'", ctx->broker_exchange, key);
+	/* Build the routing key */
+	char *key = talloc_asprintf(mem_ctx, "%s_notification", username);
+
+	/* Publish message to exchange */
+	syslog(LOG_DEBUG, "Publishing notification to exchange '%s' "
+			"with routing key '%s'", ctx->broker_exchange, key);
 	ret = amqp_basic_publish(
 		ctx->broker_conn,
-		ctx->broker_channel,
+		2,				/* Channel */
                 amqp_cstring_bytes(ctx->broker_exchange),
 		amqp_cstring_bytes(key),
                 0,				/* Mandatory */
@@ -39,47 +38,212 @@ notification_publish(TALLOC_CTX *mem_ctx, struct register_context *ctx)
                 NULL,
                 body);
 	if (ret != AMQP_STATUS_OK) {
-		syslog(LOG_ERR,
-			"Error publishing notification for user %s: %s",
-			ctx->user, amqp_error_string2(ret));
+		syslog(LOG_ERR,	"Error publishing message: %s",
+				amqp_error_string2(ret));
 		return;
 	}
 
+	/* Check for errors may happen on the broker */
 	r = amqp_get_rpc_reply(ctx->broker_conn);
 	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
 		char *err = broker_err(mem_ctx, r);
-		syslog(LOG_ERR,
-			"Error publishing notification for user %s: %s",
-			ctx->user, err);
+		syslog(LOG_ERR, "Error publishing message: %s", err);
 		talloc_free(err);
 		return;
 	}
 }
 
-	void
-notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
-		const char *user, const char *folder, uint32_t uid)
+
+	struct ldb_dn *
+fetch_mailbox_dn(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
+		const char *username)
 {
-	struct register_context *rctx;
+	int 			ret;
+	struct ldb_result 	*res;
+	const char * const	attrs[] = { "*", NULL };
+	const char 		*dnstr;
+	struct ldb_dn 		*dn;
+	const char 		*filter;
 
-	rctx = talloc_zero(mem_ctx, struct register_context);
-	if (rctx == NULL) {
-		syslog(LOG_ERR, "No memory allocating context");
-		return;
+	filter = "(&(cn=%s)(MailboxGUID=*))";
+	ret = ldb_search(ldb_ctx, mem_ctx, &res,
+			ldb_get_default_basedn(ldb_ctx),
+			LDB_SCOPE_SUBTREE, attrs,
+			filter, username);
+	if (ret != LDB_SUCCESS) {
+		syslog(LOG_ERR, "Failed to search the mailbox DN "
+				"for user %s: %s",
+				username, ldb_strerror(ret));
+		return NULL;
 	}
-	rctx->user = talloc_strdup(mem_ctx, user);
-	rctx->folder = talloc_strdup(mem_ctx, folder);
-	rctx->uid = uid;
-	rctx->broker_conn = ctx->broker_conn;
-	rctx->broker_channel = 2;
-	rctx->broker_exchange = talloc_strdup(mem_ctx, ctx->broker_exchange);
-	rctx->broker_routing_key = talloc_asprintf(mem_ctx,
-		"%s-notifications-queue", user);
+	if (res->count != 1) {
+		syslog(LOG_ERR, "Failed to search the mailbox DN "
+				"for user %s. Got %d results, expected one "
+				"(filter: %s)", username, res->count, filter);
+		return NULL;
+	}
 
-	/* TODO Register */
-	syslog(LOG_DEBUG, "Registering message in openchangedb");
+	dn = ldb_dn_copy(mem_ctx, res->msgs[0]->dn);
 
-	/* Publish notification on the user specific queue */
-	notification_publish(mem_ctx, rctx);
+	syslog(LOG_DEBUG, "Got mailbox DN '%s'", ldb_dn_get_linearized(dn));
+
+	return dn;
 }
 
+	char *
+fetch_folder_uri(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
+		struct ldb_dn *mailbox_dn, const char *folder)
+{
+	int 			ret;
+	struct ldb_result 	*res;
+	const char * const	attrs[] = { "*", NULL };
+	char 			*uri;
+	const char		*filter;
+
+	filter = "(&(PidTagDisplayName=%s)(FolderType=1))";
+	ret = ldb_search(ldb_ctx, mem_ctx, &res, mailbox_dn, LDB_SCOPE_SUBTREE,
+			attrs, filter, folder);
+	if (ret != LDB_SUCCESS) {
+		syslog(LOG_ERR, "Failed to search URI for folder '%s' "
+				"(base DN '%s'): %s",
+				folder, ldb_dn_get_linearized(mailbox_dn),
+				ldb_strerror(ret));
+		return NULL;
+	}
+	if (res->count != 1) {
+		syslog(LOG_ERR, "Failed to search URI for folder '%s' "
+				"(base DN '%s'): Got %d results, expected "
+				"one (filter %s)",
+				folder, ldb_dn_get_linearized(mailbox_dn),
+				res->count, filter);
+		return NULL;
+	}
+
+	uri = talloc_strdup(mem_ctx, ldb_msg_find_attr_as_string(
+			res->msgs[0], "MAPIStoreURI", NULL));
+	if (uri == NULL) {
+		syslog(LOG_ERR, "Failed to get URI for folder '%s' "
+				"(base DN '%s'): MAPIStoreURI attribute "
+				"not found (filter %s)", folder,
+				ldb_dn_get_linearized(mailbox_dn), filter);
+		return NULL;
+	}
+
+	syslog(LOG_DEBUG, "Got folder URI '%s'", uri);
+
+	return uri;
+}
+
+	char *
+fetch_message_uri(TALLOC_CTX *mem_ctx, const char *backend,
+		const char *folder_uri, const char *message_id)
+{
+	struct backend_context *backend_ctx;
+	enum mapistore_error ret;
+	char *uri;
+
+	backend_ctx = mapistore_backend_lookup_by_name(mem_ctx, backend);
+	if (backend_ctx == NULL) {
+		syslog(LOG_ERR, "Failed to generate message URI: Could not "
+				"retrieve backend context");
+		return NULL;
+	}
+
+	ret = mapistore_backend_manager_generate_uri(backend_ctx, mem_ctx, NULL,
+	       NULL, message_id, folder_uri, &uri);
+	if (ret != MAPISTORE_SUCCESS) {
+		syslog(LOG_ERR, "Failed to generate message URI: %s",
+				mapistore_errstr(ret));
+		return NULL;
+	}
+
+	/* We are not really deleting a context, but freeing the
+	 * allocated memory to backend_ctx */
+	mapistore_backend_delete_context(backend_ctx);
+
+	syslog(LOG_DEBUG, "Generated message URI '%s'", uri);
+
+	return uri;
+}
+
+	void
+notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
+		const char *username, const char *folder, uint32_t message_id)
+{
+	int ret;
+	struct indexing_context_list *ictxp;
+	uint64_t mid;
+	bool softdeleted;
+	char *message_id_str;
+	char *folder_uri;
+	char *message_uri;
+	struct ldb_dn *mailbox_dn;
+
+	/* Convert numeric message id to string */
+	message_id_str = talloc_asprintf(mem_ctx, "%u", message_id);
+	if (message_id_str == NULL) {
+		syslog(LOG_ERR, "Failed to register message: No memory");
+		return;
+	}
+
+	/* Fetch the user mailbox DN */
+	mailbox_dn = fetch_mailbox_dn(mem_ctx, ctx->ocdb_ctx, username);
+	if (mailbox_dn == NULL) {
+		return;
+	}
+
+	/* Search the URI of the folder */
+	folder_uri = fetch_folder_uri(mem_ctx, ctx->ocdb_ctx, mailbox_dn,
+			folder);
+	if (folder_uri == NULL) {
+		return;
+	}
+
+	/* Build the full URI, appending the message ID to the folder ID */
+	message_uri = fetch_message_uri(mem_ctx, ctx->mapistore_backend,
+			folder_uri, message_id_str);
+	if (message_uri == NULL) {
+		return;
+	}
+
+	/* Open connection to indexing database for the user */
+	ret = mapistore_indexing_add(ctx->mstore_ctx, username, &ictxp);
+	if (ret != MAPISTORE_SUCCESS) {
+		syslog(LOG_ERR, "Failed to open connection to indexing "
+				"database: %s", mapistore_errstr(ret));
+		return;
+	}
+
+	/* Check if message is already registered */
+	ret = mapistore_indexing_record_get_fmid(ctx->mstore_ctx, username,
+			message_uri, false, &mid, &softdeleted);
+	if (ret == MAPISTORE_SUCCESS) {
+		syslog(LOG_INFO, "Message already registered (user=%s, "
+				"mid=%"PRIx64", URI=%s", username, mid,
+				message_uri);
+		return;
+	}
+
+	/* Generate a new mid for the message */
+	ret = openchangedb_get_new_folderID(ctx->ocdb_ctx, &mid);
+	if (ret) {
+		syslog(LOG_ERR, "Failed to get new message mid: %s",
+				mapi_get_errstr(ret));
+		return;
+	}
+
+	/* Register the message */
+	ret = mapistore_indexing_record_add(mem_ctx, ictxp, mid, message_uri);
+	if (ret) {
+		syslog(LOG_ERR, "Failed to add record to indexing database: %s",
+				mapistore_errstr(ret));
+		return;
+	}
+	syslog(LOG_DEBUG, "Message registered for user %s (mid=0x%"PRIx64
+			", uri=%s)", username, mid, message_uri);
+
+	/* Publish notification on the user specific queue */
+	notification_publish(mem_ctx, ctx, username);
+
+        return;
+}

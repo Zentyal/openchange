@@ -15,7 +15,84 @@
 #include "notification_config.h"
 #include "notification_amqp.h"
 
+#include <param.h>
+#include <mapistore/mapistore.h>
+
 volatile sig_atomic_t abort_flag = 0;
+
+	static bool
+notification_init(TALLOC_CTX *mem_ctx, struct context *ctx)
+{
+	/* Initialize configuration */
+	ctx->lp_ctx = loadparm_init(mem_ctx);
+	if (ctx->lp_ctx == NULL) {
+		errx(EXIT_FAILURE, "Failed to initialize configuration");
+		return false;
+	}
+	lpcfg_load_default(ctx->lp_ctx);
+
+	/* Initialize mapistore */
+	ctx->mstore_ctx = mapistore_init(mem_ctx, ctx->lp_ctx,
+			ctx->mapistore_backends_path);
+	if (ctx->mstore_ctx == NULL) {
+		errx(EXIT_FAILURE, "Failed to initialize mapistore");
+		return false;
+	}
+
+	/* Initialize openchangedb context */
+		char			*ldb_path;
+		struct tevent_context	*ev;
+		int			ret;
+		struct ldb_result	*res;
+		struct ldb_dn		*tmp_dn = NULL;
+		static const char	*attrs[] = {
+			"rootDomainNamingContext",
+			"defaultNamingContext",
+			NULL
+		};
+
+	ev = tevent_context_init(talloc_autofree_context());
+	if (!ev) {
+		errx(EXIT_FAILURE, "Failed to initialize event context");
+	}
+
+	/* Step 0. Retrieve a LDB context pointer on openchange.ldb database */
+	ldb_path = talloc_asprintf(mem_ctx, "%s/%s", lpcfg_private_dir(ctx->lp_ctx),
+			"openchange.ldb");
+	ctx->ocdb_ctx = ldb_init(mem_ctx, ev);
+	if (!ctx->ocdb_ctx) {
+		errx(EXIT_FAILURE, "Failed to initialize ldb context");
+	}
+
+	/* Step 1. Connect to the database */
+	ret = ldb_connect(ctx->ocdb_ctx, ldb_path, 0, NULL);
+	talloc_free(ldb_path);
+	if (ret != LDB_SUCCESS) {
+		errx(EXIT_FAILURE, "Failed to connect to openchange database");
+	}
+
+	/* Step 2. Search for the rootDSE record */
+	ret = ldb_search(ctx->ocdb_ctx, mem_ctx, &res,
+			ldb_dn_new(mem_ctx, ctx->ocdb_ctx, "@ROOTDSE"),
+			LDB_SCOPE_BASE, attrs, NULL);
+	if (ret != LDB_SUCCESS) {
+		errx(EXIT_FAILURE, "Failed to retrieve root DSE");
+	}
+	if (res->count != 1) {
+		errx(EXIT_FAILURE, "Failed to retrieve root DSE");
+	}
+
+	/* Step 3. Set opaque naming */
+	tmp_dn = ldb_msg_find_attr_as_dn(ctx->ocdb_ctx, ctx->ocdb_ctx,
+			res->msgs[0], "rootDomainNamingContext");
+	ldb_set_opaque(ctx->ocdb_ctx, "rootDomainNamingContext", tmp_dn);
+
+	tmp_dn = ldb_msg_find_attr_as_dn(ctx->ocdb_ctx, ctx->ocdb_ctx,
+			res->msgs[0], "defaultNamingContext");
+	ldb_set_opaque(ctx->ocdb_ctx, "defaultNamingContext", tmp_dn);
+
+	return true;
+}
 
 	static void
 abort_handler(int sig)
@@ -139,6 +216,14 @@ main(int argc, const char *argv[])
 
 	/* Write pid to file */
 	pidfile_write(pfh);
+
+	/* Initialize */
+	if (!notification_init(mem_ctx, ctx)) {
+		closelog();
+		talloc_free(mem_ctx);
+		pidfile_remove(pfh);
+		err(EXIT_FAILURE, "Failed to initialize");
+	}
 
 	/* Do work */
 	while (!abort_flag) {

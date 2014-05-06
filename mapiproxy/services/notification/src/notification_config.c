@@ -82,6 +82,19 @@ read_config(struct context *ctx, const char *config_file)
 				ctx->mem_ctx, "%s-consumer",
 				ctx->broker_new_mail_queue);
 	}
+	if (config_lookup_string(&cfg, "mapistore_backends_path", &sval)) {
+		ctx->mapistore_backends_path = talloc_strdup(
+				ctx->mem_ctx, sval);
+	} else {
+		/* NULL for default location */
+		ctx->mapistore_backends_path = NULL;
+	}
+	if (config_lookup_string(&cfg, "mapistore_backend", &sval)) {
+		ctx->mapistore_backend = talloc_strdup(
+					ctx->mem_ctx, sval);
+	} else {
+		ctx->mapistore_backend = talloc_strdup(ctx->mem_ctx, "SOGo");
+	}
 
 	config_destroy(&cfg);
 }

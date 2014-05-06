@@ -94,6 +94,23 @@ def configure(ctx):
                   msg="Check for talloc 2.0.8",
                   mandatory=True)
 
+    ctx.check_cfg(package='samba-hostconfig',
+                  args=['samba-hostconfig >= 0.0.1', '--cflags', '--libs'],
+                  uselib_store='SAMBA_HOSTCONFIG',
+                  msg="Check for samba-hostconfig 0.0.1",
+                  mandatory=True)
+
+    ctx.check_cfg(package='libmapistore',
+                  args=['libmapistore >= 2.0', '--cflags', '--libs'],
+                  uselib_store='MAPISTORE',
+                  msg="Check for libmapistore 2.0",
+                  mandatory=True)
+
+    ctx.check_cfg(package='libmapiproxy',
+                  args=['libmapiproxy >= 2.0', '--cflags', '--libs'],
+                  uselib_store='MAPIPROXY',
+                  msg="Check for libmapiproxy 2.0",
+                  mandatory=True)
 
 def build(bld):
     bld.program(
@@ -108,4 +125,4 @@ def build(bld):
         cflags = ['-ggdb'],
         depends_on = [APPNAME],
         #use = [APPNAME, 'LIBMAPI', 'POPT', 'RABBITMQ'])
-        use = [APPNAME, 'POPT', 'TALLOC', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ'])
+        use = [APPNAME, 'POPT', 'TALLOC', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ', 'SAMBA_HOSTCONFIG', 'MAPISTORE', 'MAPIPROXY'])

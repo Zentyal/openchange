@@ -180,6 +180,7 @@ broker_connect(struct context *ctx)
 		return false;
 	}
 
+	/* Channel 1 is used to start a consumer on the new mail queue */
 	syslog(LOG_DEBUG, "Opening channel 1");
 	amqp_channel_open(ctx->broker_conn, 1);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
@@ -191,6 +192,7 @@ broker_connect(struct context *ctx)
 		return false;
 	}
 
+	/* Channel 2 is used to publish to exchange */
 	syslog(LOG_DEBUG, "Opening channel 2");
 	amqp_channel_open(ctx->broker_conn, 2);
 	r = amqp_get_rpc_reply(ctx->broker_conn);
