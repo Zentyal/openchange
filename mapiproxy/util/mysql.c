@@ -2,9 +2,33 @@
 
 #include <time.h>
 #include <util/debug.h>
+#include <ccan/htable/htable.h>
+#include <ccan/hash/hash.h>
 #include "libmapi/mapicode.h"
 #include "libmapi/libmapi.h"
 #include "libmapi/libmapi_private.h"
+
+
+// Items stored on ht table
+struct conn_v {
+	MYSQL *conn;
+	const char *connection_string;
+};
+
+// Rehash function for ht table
+static size_t _ht_rehash(const void *e, void *unused)
+{
+	return hash_string(((struct conn_v *)e)->connection_string);
+}
+
+// Comparison function to get items from ht table
+static bool _ht_cmp(const void *e, void *string)
+{
+        return strcmp(((struct conn_v *)e)->connection_string, (const char *)string) == 0;
+}
+
+// This is a dictionary [connection_string] -> [MYSQL *] (actually struct conn_v)
+static struct htable ht = HTABLE_INITIALIZER(ht, _ht_rehash, NULL);
 
 
 static float timespec_diff_in_seconds(struct timespec *end, struct timespec *start)
@@ -64,49 +88,66 @@ static bool parse_connection_string(TALLOC_CTX *mem_ctx,
 }
 
 
-MYSQL* create_connection(const char *connection_string, MYSQL **conn)
+MYSQL *create_connection(const char *connection_string, MYSQL **conn)
 {
-	TALLOC_CTX *mem_ctx;
-	my_bool reconnect;
-	char *host, *user, *passwd, *db, *sql;
-	bool parsed;
+	TALLOC_CTX	*mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	my_bool		reconnect;
+	char		*host, *user, *passwd, *db, *sql;
+	bool		parsed;
+	struct conn_v	*entry = NULL, *retval = NULL;
 
-	if (*conn != NULL) return *conn;
-
-	mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	retval = htable_get(&ht, hash_string(connection_string), _ht_cmp, connection_string);
+	if (retval) {
+		DEBUG(3, ("MYSQL found connection, reusing it %"PRIu32"\n", hash_string(connection_string)));
+		*conn = retval->conn;
+		goto end;
+	}
 	*conn = mysql_init(NULL);
 	reconnect = true;
 	mysql_options(*conn, MYSQL_OPT_RECONNECT, &reconnect);
 	parsed = parse_connection_string(mem_ctx, connection_string,
 					 &host, &user, &passwd, &db);
 	if (!parsed) {
-		DEBUG(0, ("Wrong connection string to mysql %s", connection_string));
+		DEBUG(0, ("Wrong connection string to MYSQL %s\n", connection_string));
 		*conn = NULL;
 		goto end;
 	}
 	// First try to connect to the database, if it fails try to create it
 	if (mysql_real_connect(*conn, host, user, passwd, db, 0, NULL, 0)) {
-		goto end;
+		DEBUG(3, ("MYSQL connection done\n"));
+		goto connected;
 	}
 
 	// Try to create database
 	if (!mysql_real_connect(*conn, host, user, passwd, NULL, 0, NULL, 0)) {
 		// Nop
-		DEBUG(0, ("Can't connect to mysql using %s", connection_string));
+		DEBUG(0, ("Can't connect to MYSQL using %s\n", connection_string));
 		*conn = NULL;
+		goto end;
 	} else {
+		DEBUG(3, ("MYSQL connection done, let's create the database\n"));
 		// Connect it!, let's try to create database
 		sql = talloc_asprintf(mem_ctx, "CREATE DATABASE %s", db);
 		if (mysql_query(*conn, sql) != 0 || mysql_select_db(*conn, db) != 0) {
-			DEBUG(0, ("Can't connect to mysql using %s",
-				  connection_string));
+			DEBUG(0, ("Can't connect to MYSQL using %s\n", connection_string));
 			*conn = NULL;
+			goto end;
 		}
+	}
+connected:
+	// This entries will never be deallocated
+	entry = talloc_zero(talloc_autofree_context(), struct conn_v);
+	entry->connection_string = talloc_strdup(entry, connection_string);
+	entry->conn = *conn;
+	// Store the new connection in our table
+	if (!htable_add(&ht, hash_string(connection_string), entry)) {
+		DEBUG(3, ("MYSQL ERROR adding new connection to internal pool of connections\n"));
+	} else {
+		DEBUG(3, ("MYSQL Stored new connection %"PRIu32"\n", hash_string(connection_string)));
 	}
 end:
 	talloc_free(mem_ctx);
 	return *conn;
-
 }
 
 
