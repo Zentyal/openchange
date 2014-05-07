@@ -22,6 +22,7 @@ import os
 import signal
 import subprocess
 import logging
+from optparse import OptionParser
 
 LOG_LEVEL = logging.DEBUG
 
@@ -49,7 +50,8 @@ def getSambaProcess(logger):
 def runGdb(pid, logger):
 	signal.signal(signal.SIGINT, signal.SIG_IGN)
 	try:
-		subprocess.call(['gdb', '--pid' , pid])
+		logger.info("call: sudo gdb --pid " + pid)
+ 		subprocess.call(['gdb', '--pid' , pid])
 	except OSError as e:
 		if e.errno == os.errno.ENOENT:
 			logger.critical('GDB not found in path')
@@ -60,6 +62,11 @@ def runGdb(pid, logger):
 
 
 def main():
+	parser = OptionParser()
+	parser.add_option("--no-gdb", dest="no_gdb", action="store_true",
+                  	  help="Does not start gdb, just print what Openchange process number is")
+	(options, args) = parser.parse_args()
+
 	logger = setLogger()
 	psbuffer = getSambaProcess(logger)
 	if not 'samba' in psbuffer:
@@ -73,7 +80,13 @@ def main():
 		fh = open('/proc/%s/maps' % pid, 'r')
 		try:
 			map = fh.read()
-			if 'dcerpc_mapiproxy' in map: return runGdb(pid, logger)
+			if 'dcerpc_mapiproxy' in map:
+				if options.no_gdb:
+					# just print out how to start gdb
+					print "call: sudo gdb --pid " + pid
+					return True
+				# run gdb to attach to the process
+				return runGdb(pid, logger)
 		except (IOError, OSError) as e:
 			logger.error(e)
 			return	
