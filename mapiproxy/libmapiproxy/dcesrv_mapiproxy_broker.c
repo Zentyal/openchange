@@ -19,8 +19,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <mapiproxy/dcesrv_mapiproxy.h>
-#include <libmapiproxy.h>
+#include "mapiproxy/dcesrv_mapiproxy.h"
+#include "mapiproxy/libmapiproxy/libmapiproxy.h"
 #include <util/debug.h>
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
