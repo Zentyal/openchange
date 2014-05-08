@@ -8,7 +8,6 @@
 
 #include <mapistore/mapistore.h>
 #include <mapistore/mapistore_errors.h>
-#include <mapistore/mapistore_mgmt.h>
 
 #include "notification.h"
 
