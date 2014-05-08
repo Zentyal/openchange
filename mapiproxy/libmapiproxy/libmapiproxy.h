@@ -234,7 +234,7 @@ bool dcesrv_mapiproxy_broker_connect(struct mapiproxy_broker *);
 amqp_channel_t dcesrv_mapiproxy_broker_get_free_channel(struct mapiproxy_broker *);
 bool dcesrv_mapiproxy_broker_open_channel(struct mapiproxy_broker *, amqp_channel_t);
 bool dcesrv_mapiproxy_broker_close_channel(struct mapiproxy_broker *, amqp_channel_t);
-bool dcesrv_mapiproxy_broker_bind_queue(struct mapiproxy_broker *, amqp_channel_t, const char *, const char *, const char *);
+bool dcesrv_mapiproxy_broker_bind_queue(TALLOC_CTX *, struct mapiproxy_broker *, amqp_channel_t, const char *, char **);
 bool dcesrv_mapiproxy_broker_poll_queue(struct mapiproxy_broker *, amqp_channel_t, const char *, amqp_boolean_t);
 bool dcesrv_mapiproxy_broker_read_message(struct mapiproxy_broker *, amqp_channel_t channel, amqp_message_t *);
 

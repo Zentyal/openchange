@@ -33,22 +33,44 @@ notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
 	json_object_object_add(jobj, "fid", jfid);
 	json_object_object_add(jobj, "uri", juri);
 
-	/* Build the routing key */
-	char *key = talloc_asprintf(mem_ctx, "%s_notification", username);
+	/* Build the exchange name for user */
+	char *user_exchange = talloc_asprintf(mem_ctx, "%s_notification",
+		username);
+
+	/* Declare the exchange */
+	syslog(LOG_DEBUG, "Declaring user exchange '%s'", user_exchange);
+	amqp_exchange_declare(
+		ctx->broker_conn,
+		2,	/* Channel */
+		amqp_cstring_bytes(user_exchange),
+		amqp_cstring_bytes("fanout"),
+		0,	/* Passive */
+		0,	/* Durable */
+		amqp_empty_table);
+	r = amqp_get_rpc_reply(ctx->broker_conn);
+	if (r.reply_type != AMQP_RESPONSE_NORMAL) {
+		char *err = broker_err(ctx->mem_ctx, r);
+		syslog(LOG_ERR, "Failed to declare exchange: %s", err);
+		talloc_free(err);
+
+		/* Free memory */
+		json_object_put(jobj);
+
+		return;
+	}
 
 	/* Publish message to exchange */
-	syslog(LOG_DEBUG, "Publishing notification to exchange '%s' "
-			"with routing key '%s'", ctx->broker_exchange, key);
+	syslog(LOG_DEBUG, "Publishing notification to exchange '%s'",
+			user_exchange);
 	ret = amqp_basic_publish(
 		ctx->broker_conn,
 		2,				/* Channel */
-                amqp_cstring_bytes(ctx->broker_exchange),
-		amqp_cstring_bytes(key),
-                0,				/* Mandatory */
+		amqp_cstring_bytes(user_exchange),
+		amqp_empty_bytes,		/* Routing key */
+		0,				/* Mandatory */
 		0,				/* Inmediate */
-                NULL,
-                amqp_cstring_bytes(json_object_to_json_string(jobj)));
-
+		NULL,				/* Properties */
+		amqp_cstring_bytes(json_object_to_json_string(jobj)));
 	if (ret != AMQP_STATUS_OK) {
 		syslog(LOG_ERR,	"Error publishing message: %s",
 				amqp_error_string2(ret));

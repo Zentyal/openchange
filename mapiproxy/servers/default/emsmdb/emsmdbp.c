@@ -169,24 +169,22 @@ _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 	if ((channel = dcesrv_mapiproxy_broker_get_free_channel(broker)) != 0) {
 		/* Open the channel */
 		if (dcesrv_mapiproxy_broker_open_channel(broker, channel)) {
-			char *queue, *routing_key;
-			const char *exchange;
+			char *queue;
+			const char *user_exchange;
 
 			emsmdbp_ctx->broker_channel = channel;
 
-			/* Build the user queue name */
-			queue = talloc_asprintf(mem_ctx, "%s_notification_queue", username);
-			exchange = talloc_strdup(mem_ctx, "exchange"); // TODO
-			exchange = lpcfg_parm_string(lp_ctx, NULL, "dcerpc_mapiproxy", "broker_exchange");
-			routing_key = talloc_asprintf(mem_ctx, "%s_notification", username);
+			/* Build the user exchange name */
+			user_exchange = talloc_asprintf(mem_ctx,
+					"%s_notification", username);
 
 			/* Declare and bind queue */
 			if (dcesrv_mapiproxy_broker_bind_queue(
+					mem_ctx,
 					broker,
 					channel,
-					queue,
-					exchange,
-					routing_key)) {
+					user_exchange,
+					&queue)) {
 				emsmdbp_ctx->broker_notification_queue = queue;
 			} else {
 				emsmdbp_ctx->broker_notification_queue = NULL;
