@@ -774,6 +774,7 @@ mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION):	mapiproxy/libmapiproxy/dc
 							mapiproxy/libmapiproxy/modules.po			\
 							mapiproxy/libmapiproxy/fault_util.po			\
 							mapiproxy/util/mysql.po					\
+							mapiproxy/util/ccan/htable/htable.po	\
 							libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
 	@$(CC) -o $@ $(DSOOPT) $(LDFLAGS) -Wl,-soname,libmapiproxy.$(SHLIBEXT).$(LIBMAPIPROXY_SO_VERSION) $^ -L. $(LIBS) $(TDB_LIBS) $(DL_LIBS) $(MYSQL_LIBS)
@@ -925,7 +926,8 @@ mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION): 	mapiproxy/libmapistore/m
 							mapiproxy/libmapistore/backends/namedprops_mysql.po		\
 							mapiproxy/libmapistore/backends/indexing_tdb.po			\
 							mapiproxy/libmapistore/backends/indexing_mysql.po		\
-							mapiproxy/util/mysql.po						\
+							mapiproxy/util/mysql.po									\
+							mapiproxy/util/ccan/htable/htable.po					\
 							mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)		\
 							libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
@@ -1389,6 +1391,7 @@ bin/unittest: test/test_suites/libmapistore/indexing.o \
 	test/openchange_test_suite.o \
 	test/test_common.c \
 	mapiproxy/util/mysql.o \
+	mapiproxy/util/ccan/htable/htable.o \
 	mapiproxy/libmapiproxy/openchangedb.o \
 	mapiproxy/libmapiproxy/openchangedb_table.o \
 	mapiproxy/libmapiproxy/openchangedb_message.o \

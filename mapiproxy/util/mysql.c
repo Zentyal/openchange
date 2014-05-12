@@ -2,8 +2,8 @@
 
 #include <time.h>
 #include <util/debug.h>
-#include <ccan/htable/htable.h>
-#include <ccan/hash/hash.h>
+#include "ccan/htable/htable.h"
+#include "ccan/hash/hash.h"
 #include "libmapi/mapicode.h"
 #include "libmapi/libmapi.h"
 #include "libmapi/libmapi_private.h"
