@@ -1369,7 +1369,7 @@ static NTSTATUS dcesrv_exchange_nsp_dispatch(struct dcesrv_call_state *dce_call,
  */
 static NTSTATUS dcesrv_exchange_nsp_init(struct dcesrv_context *dce_ctx)
 {
-	DEBUG (0, ("dcesrv_exchange_nsp_init\n"));
+	DEBUG (5, ("dcesrv_exchange_nsp_init\n"));
 	/* Initialize exchange_nsp session */
 	nsp_session = talloc_zero(dce_ctx, struct exchange_nsp_session);
 	if (!nsp_session) return NT_STATUS_NO_MEMORY;
