@@ -307,8 +307,6 @@ notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
 				mapistore_errstr(ret));
 		return;
 	}
-	syslog(LOG_DEBUG, "Message registered for user %s (mid=0x%"PRIx64
-			", uri=%s)", username, mid, message_uri);
 
 	/* Get the fid from the folder URI */
 	ret = fetch_folder_fid(ctx->ocdb_ctx, ctx->mstore_ctx, username,
@@ -316,6 +314,10 @@ notification_register_message(TALLOC_CTX *mem_ctx, const struct context *ctx,
 	if (ret) {
 		return;
 	}
+
+	syslog(LOG_DEBUG, "Message registered for user %s (mid=0x%.16"PRIx64
+				"(%"PRIu64"), fid=0x%.16"PRIx64"(%"PRIu64"), uri=%s)",
+				username, mid, mid, fid, fid, message_uri);
 
 	/* Publish notification on the user specific queue */
 	notification_publish(mem_ctx, ctx, username, mid, fid, message_uri);
