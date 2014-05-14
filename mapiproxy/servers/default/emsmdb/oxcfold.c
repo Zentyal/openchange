@@ -227,9 +227,8 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetHierarchyTable(TALLOC_CTX *mem_ctx,
 			object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
 		}
 
-		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder hierarchy table on channel %d (handle=%d, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
-				emsmdbp_ctx->broker_channel,
-				rec->handle, folderID, folderID));
+		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder hierarchy table(handle=0x%x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+						rec->handle, emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
 	}
 
 end:
@@ -355,8 +354,8 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetContentsTable(TALLOC_CTX *mem_ctx,
 			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
 		}
 
-		DEBUG(0, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder content table on channel %d (handle=%d, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
-				emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
+		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder content table(handle=0x%x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+				rec->handle, emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
         }
 
 end:

@@ -114,8 +114,9 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRegisterNotification(TALLOC_CTX *mem_ctx,
 	if (subscription_object->object.subscription->subscription_list->subscription->notification_types & fnevTableModified) {
 		subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.folder_id = mapi_req->u.mapi_RegisterNotification.FolderId.ID;
 		subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = parent_object->object.table->ulType;
-		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Table notification handler %d registered on channel %d (flags=0x%04x, table_handle=%d, table_type=0x%02X, fid=0x%"PRIx64")\n",
+		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Table notification handler 0x%02x (parent 0x%02x) registered on channel %d (flags=0x%04x, table_handle=%d, table_type=0x%02X, fid=0x%"PRIx64")\n",
 					subscription_rec->handle,
+					parent_rec->handle,
 					emsmdbp_ctx->broker_channel,
 					subscription_object->object.subscription->subscription_list->subscription->notification_types,
 					parent_object->object.table->handle,
@@ -125,8 +126,9 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRegisterNotification(TALLOC_CTX *mem_ctx,
 		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.folder_id = mapi_req->u.mapi_RegisterNotification.FolderId.ID;
 		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.object_id = mapi_req->u.mapi_RegisterNotification.MessageId.ID;
 		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.whole_store = mapi_req->u.mapi_RegisterNotification.WantWholeStore;
-		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Object notification handler %d registered on channel %d (flags=0x%04x, mid=0x%"PRIx64", fid=0x%"PRIx64", whole_store=%d)\n",
+		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Object notification handler 0x%02x (parent 0x%02x) registered on channel %d (flags=0x%04x, mid=0x%"PRIx64", fid=0x%"PRIx64", whole_store=%d)\n",
 					subscription_rec->handle,
+					parent_rec->handle,
 					emsmdbp_ctx->broker_channel,
 					subscription_object->object.subscription->subscription_list->subscription->notification_types,
 					subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.object_id,

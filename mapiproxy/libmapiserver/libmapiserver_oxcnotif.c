@@ -711,6 +711,7 @@ _PUBLIC_ void libmapiserver_process_notifications(
 			continue;
 		}
 
+		DEBUG(5, ("[%s:%d]: Processing pending notifications\n", __FUNCTION__, __LINE__));
 		/* For each notification, check if there is a matching subscription */
 		for (sl = emsmdbp_ctx->mstore_ctx->subscriptions; sl; sl = sl->next) {
 			if (sl->subscription == NULL) {
@@ -719,6 +720,7 @@ _PUBLIC_ void libmapiserver_process_notifications(
 
 			/* If subscription match the notification process it */
 			if (libmapiserver_notification_match_subscription(nl->notification, sl->subscription)) {
+				DEBUG(5, ("[%s:%d]: Found subscription matching notification\n", __FUNCTION__, __LINE__));
 				mapi_response->mapi_repl = talloc_realloc(mem_ctx, mapi_response->mapi_repl, struct EcDoRpc_MAPI_REPL, *idxp + 2);
 				libmapiserver_notification_fill(mem_ctx, emsmdbp_ctx, &(mapi_response->mapi_repl[*idxp]), nl->notification, sl->subscription, sizep);
 				*idxp += 1;
