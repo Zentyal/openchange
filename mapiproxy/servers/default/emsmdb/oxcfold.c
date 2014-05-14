@@ -29,7 +29,7 @@
 #include "mapiproxy/libmapiproxy/libmapiproxy.h"
 #include "mapiproxy/libmapiserver/libmapiserver.h"
 #include "dcesrv_exchange_emsmdb.h"
-
+#include <dlinklist.h>
 
 /**
    \details EcDoRpc OpenFolder (0x02) Rop. This operation opens an
@@ -146,9 +146,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetHierarchyTable(TALLOC_CTX *mem_ctx,
 	struct mapi_handles	*parent;
 	struct mapi_handles	*rec = NULL;
 	struct emsmdbp_object	*object = NULL, *parent_object = NULL;
-	struct mapistore_subscription_list *subscription_list;
-	struct mapistore_subscription *subscription;
-	struct mapistore_table_subscription_parameters subscription_parameters;
 	void			*data;
 	uint64_t		folderID;
 	uint32_t		handle;
@@ -203,6 +200,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetHierarchyTable(TALLOC_CTX *mem_ctx,
 
 	object = emsmdbp_folder_open_table(rec, parent_object, MAPISTORE_FOLDER_TABLE, rec->handle);
 	if (!object) {
+		DEBUG(5, ("  no object found\n"));
 		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
 		goto end;
 	}
@@ -212,21 +210,26 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetHierarchyTable(TALLOC_CTX *mem_ctx,
 	/* notifications */
 	if ((mapi_req->u.mapi_GetHierarchyTable.TableFlags & TableFlags_NoNotifications)) {
 		DEBUG(5, ("  notifications skipped\n"));
-	}
-	else {
+	} else {
 		/* we attach the subscription to the session object */
-		subscription_list = talloc_zero(emsmdbp_ctx->mstore_ctx, struct mapistore_subscription_list);
-		DLIST_ADD(emsmdbp_ctx->mstore_ctx->subscriptions, subscription_list);
+		object->object.subscription->subscription_list = talloc_zero(object, struct mapistore_subscription_list);
 
-		subscription_parameters.table_type = MAPISTORE_FOLDER_TABLE;
-		subscription_parameters.folder_id = folderID;
+		DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->subscriptions, object->object.subscription->subscription_list, void);
+		/* talloc_reference(object, subscription_list); */
 
-		/* note that a mapistore_subscription can exist without a corresponding emsmdbp_object (tables) */
-		subscription = mapistore_new_subscription(subscription_list, emsmdbp_ctx->mstore_ctx,
-							  emsmdbp_ctx->username,
-							  rec->handle, fnevTableModified, &subscription_parameters);
-		subscription_list->subscription = subscription;
-		object->object.table->subscription_list = subscription_list;
+		object->object.subscription->subscription_list->subscription = talloc_zero(object->object.subscription->subscription_list, struct mapistore_subscription);
+		object->object.subscription->subscription_list->subscription->handle = rec->handle;
+		object->object.subscription->subscription_list->subscription->notification_types = fnevTableModified;
+		object->object.subscription->subscription_list->subscription->parameters.table_parameters.folder_id = folderID;
+		if ((mapi_req->u.mapi_GetHierarchyTable.TableFlags & TableFlags_Associated)) {
+			object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_FAI_TABLE;
+		} else {
+			object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
+		}
+
+		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder hierarchy table on channel %d (handle=%d, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+				emsmdbp_ctx->broker_channel,
+				rec->handle, folderID, folderID));
 	}
 
 end:
@@ -261,9 +264,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetContentsTable(TALLOC_CTX *mem_ctx,
 	struct mapi_handles	*parent;
 	struct mapi_handles	*rec = NULL;
 	struct emsmdbp_object	*object = NULL, *parent_object;
-        struct mapistore_subscription_list *subscription_list;
-        struct mapistore_subscription *subscription;
-        struct mapistore_table_subscription_parameters subscription_parameters;
 	void			*data;
 	uint64_t		folderID;
 	uint32_t		handle;
@@ -328,6 +328,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetContentsTable(TALLOC_CTX *mem_ctx,
 
 	object = emsmdbp_folder_open_table(rec, parent_object, table_type, rec->handle);
 	if (!object) {
+		DEBUG(5, ("  object not found\n"));
 		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
 		goto end;
 	}
@@ -337,30 +338,29 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetContentsTable(TALLOC_CTX *mem_ctx,
 	/* notifications */
 	if ((mapi_req->u.mapi_GetContentsTable.TableFlags & TableFlags_NoNotifications)) {
 		DEBUG(5, ("  notifications skipped\n"));
-	}
-	else {
+	} else {
 		/* we attach the subscription to the session object */
-		subscription_list = talloc_zero(emsmdbp_ctx->mstore_ctx, struct mapistore_subscription_list);
-		DLIST_ADD(emsmdbp_ctx->mstore_ctx->subscriptions, subscription_list);
-		
+		object->object.table->subscription_list = talloc_zero(object, struct mapistore_subscription_list);
+
+		DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->subscriptions, object->object.table->subscription_list, void);
+		/* talloc_reference(object, subscription_list); */
+
+		object->object.table->subscription_list->subscription = talloc_zero(object->object.table->subscription_list, struct mapistore_subscription);
+		object->object.table->subscription_list->subscription->handle = rec->handle;
+		object->object.table->subscription_list->subscription->notification_types = fnevTableModified;
+		object->object.table->subscription_list->subscription->parameters.table_parameters.folder_id = folderID;
 		if ((mapi_req->u.mapi_GetContentsTable.TableFlags & TableFlags_Associated)) {
-			subscription_parameters.table_type = MAPISTORE_FAI_TABLE;
+			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_FAI_TABLE;
+		} else {
+			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
 		}
-		else {
-			subscription_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
-		}
-		subscription_parameters.folder_id = folderID; 
-                
-		/* note that a mapistore_subscription can exist without a corresponding emsmdbp_object (tables) */
-		subscription = mapistore_new_subscription(subscription_list, emsmdbp_ctx->mstore_ctx,
-							  emsmdbp_ctx->username,
-							  rec->handle, fnevTableModified, &subscription_parameters);
-		subscription_list->subscription = subscription;
-		object->object.table->subscription_list = subscription_list;
+
+		DEBUG(0, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder content table on channel %d (handle=%d, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+				emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
         }
 
 end:
-	
+
 	*size += libmapiserver_RopGetContentsTable_size(mapi_repl);
 
 	return MAPI_E_SUCCESS;

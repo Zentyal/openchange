@@ -59,9 +59,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRegisterNotification(TALLOC_CTX *mem_ctx,
 	uint32_t		handle;
         struct emsmdbp_object   *parent_object;
         struct emsmdbp_object   *subscription_object;
-        struct mapistore_subscription *subscription;
-        struct mapistore_subscription_list *subscription_list;
-        struct mapistore_object_subscription_parameters subscription_parameters;
         void                    *data;
 
 	DEBUG(4, ("exchange_emsmdb: [OXCNOTIF] RegisterNotification (0x29)\n"));
@@ -104,23 +101,38 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRegisterNotification(TALLOC_CTX *mem_ctx,
         subscription_object = emsmdbp_object_subscription_init(subscription_rec, emsmdbp_ctx, parent_object);
         mapi_handles_set_private_data(subscription_rec, subscription_object);
 
-        /* we attach the subscription to the session object.
-           note: a mapistore_subscription can exist without a corresponding emsmdbp_object (tables) */
-        subscription_list = talloc_zero(emsmdbp_ctx->mstore_ctx, struct mapistore_subscription_list);
-        DLIST_ADD(emsmdbp_ctx->mstore_ctx->subscriptions, subscription_list);
+	/* we attach the subscription to the session object.
+	 * note: a mapistore_subscription can exist without a corresponding
+	 * emsmdbp_object (tables) */
+	subscription_object->object.subscription->subscription_list = talloc_zero(subscription_object, struct mapistore_subscription_list);
 
-        subscription_parameters.folder_id = mapi_req->u.mapi_RegisterNotification.FolderId.ID;
-        subscription_parameters.object_id = mapi_req->u.mapi_RegisterNotification.MessageId.ID;
-        subscription_parameters.whole_store = mapi_req->u.mapi_RegisterNotification.WantWholeStore;
+	DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->subscriptions, subscription_object->object.subscription->subscription_list, void);
 
-        subscription = mapistore_new_subscription(subscription_list, emsmdbp_ctx->mstore_ctx,
-						  emsmdbp_ctx->username, 
-						  subscription_rec->handle,
-						  mapi_req->u.mapi_RegisterNotification.NotificationFlags,
-						  &subscription_parameters);
-        subscription_list->subscription = subscription;
-
-        subscription_object->object.subscription->subscription_list = subscription_list;
+	subscription_object->object.subscription->subscription_list->subscription = talloc_zero(subscription_object->object.subscription->subscription_list, struct mapistore_subscription);
+	subscription_object->object.subscription->subscription_list->subscription->handle = subscription_rec->handle;
+	subscription_object->object.subscription->subscription_list->subscription->notification_types = mapi_req->u.mapi_RegisterNotification.NotificationFlags;
+	if (subscription_object->object.subscription->subscription_list->subscription->notification_types & fnevTableModified) {
+		subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.folder_id = mapi_req->u.mapi_RegisterNotification.FolderId.ID;
+		subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = parent_object->object.table->ulType;
+		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Table notification handler %d registered on channel %d (flags=0x%04x, table_handle=%d, table_type=0x%02X, fid=0x%"PRIx64")\n",
+					subscription_rec->handle,
+					emsmdbp_ctx->broker_channel,
+					subscription_object->object.subscription->subscription_list->subscription->notification_types,
+					parent_object->object.table->handle,
+					subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type,
+					subscription_object->object.subscription->subscription_list->subscription->parameters.table_parameters.folder_id));
+	} else {
+		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.folder_id = mapi_req->u.mapi_RegisterNotification.FolderId.ID;
+		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.object_id = mapi_req->u.mapi_RegisterNotification.MessageId.ID;
+		subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.whole_store = mapi_req->u.mapi_RegisterNotification.WantWholeStore;
+		DEBUG(5, ("exchange_emsmdb: [OXCNOTIF] Object notification handler %d registered on channel %d (flags=0x%04x, mid=0x%"PRIx64", fid=0x%"PRIx64", whole_store=%d)\n",
+					subscription_rec->handle,
+					emsmdbp_ctx->broker_channel,
+					subscription_object->object.subscription->subscription_list->subscription->notification_types,
+					subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.object_id,
+					subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.folder_id,
+					subscription_object->object.subscription->subscription_list->subscription->parameters.object_parameters.whole_store));
+	}
 
 end:
 	*size += libmapiserver_RopRegisterNotification_size();

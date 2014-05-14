@@ -39,6 +39,8 @@
 
 #include "gen_ndr/exchange.h"
 
+struct emsmdbp_context;
+
 #ifndef	__BEGIN_DECLS
 #ifdef	__cplusplus
 #define	__BEGIN_DECLS		extern "C" {
@@ -508,6 +510,8 @@ uint16_t libmapiserver_RopOpenEmbeddedMessage_size(struct EcDoRpc_MAPI_REPL *res
 /* definitions from libmapiserver_oxcnotif.c */
 uint16_t libmapiserver_RopRegisterNotification_size(void);
 uint16_t libmapiserver_RopNotify_size(struct EcDoRpc_MAPI_REPL *);
+void libmapiserver_process_queued_notifications(struct emsmdbp_context *);
+void libmapiserver_process_notifications(TALLOC_CTX *, struct emsmdbp_context *, struct mapi_response *, uint32_t *, uint16_t *);
 
 /* definitions from libmapiserver_oxcdata.c */
 uint16_t libmapiserver_TypedString_size(struct TypedString);

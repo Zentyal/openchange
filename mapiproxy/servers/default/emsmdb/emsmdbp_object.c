@@ -27,6 +27,7 @@
 
 #include <ctype.h>
 #include <time.h>
+#include <dlinklist.h>
 
 #include "mapiproxy/dcesrv_mapiproxy.h"
 #include "mapiproxy/libmapiproxy/libmapiproxy.h"
@@ -665,6 +666,7 @@ static int emsmdbp_object_destructor(void *data)
 	uint32_t		contextID;
 	unsigned int		missing_objects;
 	struct timeval		request_end, request_delta;
+	struct mapistore_subscription_list *sl;
 
 	if (!data) return -1;
 	if (!emsmdbp_is_mapistore(object)) goto nomapistore;
@@ -684,20 +686,21 @@ static int emsmdbp_object_destructor(void *data)
 		if (emsmdbp_is_mapistore(object) && object->backend_object && object->object.table->handle > 0) {
 			mapistore_table_handle_destructor(object->emsmdbp_ctx->mstore_ctx, emsmdbp_get_contextID(object), object->backend_object, object->object.table->handle);
 		}
-                if (object->object.table->subscription_list) {
-                        DLIST_REMOVE(object->emsmdbp_ctx->mstore_ctx->subscriptions, object->object.table->subscription_list);
-			talloc_free(object->object.table->subscription_list);
-			/* talloc_unlink(object->emsmdbp_ctx, object->object.table->subscription_list); */
-                }
+		while ((sl = object->object.table->subscription_list) != NULL) {
+			DLIST_REMOVE(object->emsmdbp_ctx->mstore_ctx->subscriptions, sl);
+			DLIST_REMOVE(object->object.table->subscription_list, sl);
+			talloc_free(sl);
+		}
 		break;
 	case EMSMDBP_OBJECT_STREAM:
 		emsmdbp_object_stream_commit(object);
 		break;
         case EMSMDBP_OBJECT_SUBSCRIPTION:
-                if (object->object.subscription->subscription_list) {
-                        DLIST_REMOVE(object->emsmdbp_ctx->mstore_ctx->subscriptions, object->object.subscription->subscription_list);
-			talloc_free(object->object.subscription->subscription_list);
-                }
+		while ((sl = object->object.subscription->subscription_list) != NULL) {
+			DLIST_REMOVE(object->emsmdbp_ctx->mstore_ctx->subscriptions, sl);
+			DLIST_REMOVE(object->object.subscription->subscription_list, sl);
+			talloc_free(sl);
+		}
 		break;
 	case EMSMDBP_OBJECT_SYNCCONTEXT:
 		gettimeofday(&request_end, NULL);
