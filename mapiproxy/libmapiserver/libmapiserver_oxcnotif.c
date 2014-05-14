@@ -578,17 +578,18 @@ static bool libmapiserver_notification_match_subscription(
 		}
 	} else {
 		if (((subscription->notification_types & fnevObjectCreated)
-					&& notification->event == MAPISTORE_OBJECT_CREATED)
-				|| ((subscription->notification_types & fnevObjectModified)
-					&& notification->event == MAPISTORE_OBJECT_MODIFIED)
-				|| ((subscription->notification_types & fnevObjectDeleted)
-					&& notification->event == MAPISTORE_OBJECT_DELETED)
-				|| ((subscription->notification_types & fnevObjectCopied)
-					&& notification->event == MAPISTORE_OBJECT_COPIED)
-				|| ((subscription->notification_types & fnevObjectMoved)
-					&& notification->event == MAPISTORE_OBJECT_MOVED)
-				|| ((subscription->notification_types & fnevNewMail)
-					&& notification->event == MAPISTORE_OBJECT_NEWMAIL)){
+			&& notification->event == MAPISTORE_OBJECT_CREATED)
+		|| ((subscription->notification_types & fnevObjectModified)
+			&& notification->event == MAPISTORE_OBJECT_MODIFIED)
+		|| ((subscription->notification_types & fnevObjectDeleted)
+			&& notification->event == MAPISTORE_OBJECT_DELETED)
+		|| ((subscription->notification_types & fnevObjectCopied)
+			&& notification->event == MAPISTORE_OBJECT_COPIED)
+		|| ((subscription->notification_types & fnevObjectMoved)
+			&& notification->event == MAPISTORE_OBJECT_MOVED)
+		|| ((subscription->notification_types & fnevNewMail)
+			&& notification->event == MAPISTORE_OBJECT_NEWMAIL))
+		{
 			n_object_parameters = &notification->parameters.object_parameters;
 			s_object_parameters = &subscription->parameters.object_parameters;
 			if (s_object_parameters->whole_store) {
