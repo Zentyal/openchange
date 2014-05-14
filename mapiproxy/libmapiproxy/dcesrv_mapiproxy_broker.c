@@ -286,11 +286,8 @@ _PUBLIC_ bool dcesrv_mapiproxy_broker_poll_queue(
 	}
 
 	if (r.reply.id == AMQP_BASIC_GET_EMPTY_METHOD) {
-		DEBUG(0, ("%s: NO MESSAGES: (queue=%s, channel=%d)\n", __func__, queue, channel));
 		return false;
 	}
-
-	DEBUG(0, ("%s: HAVE MESSAGE: (queue=%s, channel=%d)\n", __func__, queue, channel));
 
 	/* TODO Check if message is basic.publish, any other should be logged
 	 * and discarded */
