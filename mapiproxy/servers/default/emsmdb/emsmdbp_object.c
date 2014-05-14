@@ -1192,7 +1192,7 @@ int emsmdbp_folder_get_folder_count(struct emsmdbp_context *emsmdbp_ctx, struct 
 			DEBUG(5, ("unsupported object type\n"));
 			return MAPISTORE_ERROR;
 		}
-		printf("emsmdbp_folder_get_folder_count: folderID = %"PRIu64"\n", folderID);
+		DEBUG(5, ("emsmdbp_folder_get_folder_count: folderID = 0x%"PRIx64"\n", folderID));
 		retval = (int) openchangedb_get_folder_count(emsmdbp_ctx->oc_ctx, folderID, row_countp);
 	}
 
@@ -1433,7 +1433,7 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_folder_open_table(TALLOC_CTX *mem_ctx,
 					table_object->object.table->denominator = 0;
 					return table_object;
 				}
-				DEBUG(0, ("Initializaing openchangedb table\n"));
+				DEBUG(5, ("Initializaing openchangedb table\n"));
 				openchangedb_table_init((TALLOC_CTX *)table_object, table_type, folderID, &table_object->backend_object);
 			}
 		}

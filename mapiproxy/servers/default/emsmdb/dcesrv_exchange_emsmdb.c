@@ -205,7 +205,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 	/* Search for an existing session and increment ref_count, otherwise create it */
         session = dcesrv_find_emsmdb_session(&handle->wire_handle.uuid);
         if (session) {
-                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n",
+                DEBUG(3, ("[exchange_emsmdb]: Increment session ref count for %d\n", 
                           session->session->context_id));
                 mpm_session_increment_ref_count(session->session);
         }
@@ -223,7 +223,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 		mpm_session_set_private_data(session->session, (void *) emsmdbp_ctx);
 		mpm_session_set_destructor(session->session, emsmdbp_destructor);
 
-		DEBUG(0, ("[exchange_emsmdb]: New session added: %d\n", session->session->context_id));
+		DEBUG(3, ("[exchange_emsmdb]: New session added: %d\n", session->session->context_id));
 
 		DLIST_ADD_END(emsmdb_session, session, struct exchange_emsmdb_session *);
 	}
@@ -1276,7 +1276,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 	/* Search for an existing session and increment ref_count, otherwise create it */
         session = dcesrv_find_emsmdb_session(&handle->wire_handle.uuid);
         if (session) {
-                DEBUG(0, ("[exchange_emsmdb]: Increment session ref count for %d\n",
+                DEBUG(3, ("[exchange_emsmdb]: Increment session ref count for %d\n",
                           session->session->context_id));
                 mpm_session_increment_ref_count(session->session);
         }
@@ -1294,7 +1294,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 		mpm_session_set_private_data(session->session, (void *) emsmdbp_ctx);
 		mpm_session_set_destructor(session->session, emsmdbp_destructor);
 
-		DEBUG(0, ("[exchange_emsmdb]: New session added: %d\n", session->session->context_id));
+		DEBUG(3, ("[exchange_emsmdb]: New session added: %d\n", session->session->context_id));
 
 		DLIST_ADD_END(emsmdb_session, session, struct exchange_emsmdb_session *);
 	}

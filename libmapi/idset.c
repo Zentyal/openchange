@@ -1033,14 +1033,14 @@ _PUBLIC_ void IDSET_dump(const struct idset *idset, const char *label)
 	uint32_t i;
 	char *guid_str;
 
-	DEBUG(0, ("[%s] Dump of idset\n", label));
+	DEBUG(5, ("[%s] Dump of idset\n", label));
 	while (idset) {
 		if (idset->idbased) {
-			DEBUG(0, ("  %.4x: %d elements\n", idset->repl.id, idset->range_count));
+			DEBUG(5, ("  %.4x: %d elements\n", idset->repl.id, idset->range_count));
 		}
 		else {
 			guid_str = GUID_string(NULL, &idset->repl.guid);
-			DEBUG(0, ("  %s: %d elements\n", guid_str, idset->range_count));
+			DEBUG(5, ("  %s: %d elements\n", guid_str, idset->range_count));
 			talloc_free(guid_str);
 		}
 
@@ -1049,7 +1049,7 @@ _PUBLIC_ void IDSET_dump(const struct idset *idset, const char *label)
 			if (exchange_globcnt(range->low) > exchange_globcnt(range->high)) {
 				abort();
 			}
-			DEBUG(0, ("  [0x%.12" PRIx64 ":0x%.12" PRIx64 "]\n", range->low, range->high));
+			DEBUG(5, ("  [0x%.12" PRIx64 ":0x%.12" PRIx64 "]\n", range->low, range->high));
 			range = range->next;
 		}
 
