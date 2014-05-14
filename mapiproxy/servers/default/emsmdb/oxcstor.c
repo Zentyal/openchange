@@ -282,7 +282,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRelease(TALLOC_CTX *mem_ctx,
 	while ((sl = sl_to_remove) != NULL) {
 		DLIST_REMOVE(emsmdbp_ctx->mstore_ctx->subscriptions, sl);
 		DLIST_REMOVE(sl_to_remove, sl);
-		talloc_free(sl);
 	}
 
 	/* We finally really delete the handle */
