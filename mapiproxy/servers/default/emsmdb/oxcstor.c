@@ -264,7 +264,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRelease(TALLOC_CTX *mem_ctx,
 					    uint16_t *size)
 {
 	struct mapistore_subscription_list	*sl;
-	struct mapistore_subscription_list	*sl_to_remove;
 	enum MAPISTATUS				retval;
 	uint32_t				handle;
 
@@ -273,15 +272,15 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRelease(TALLOC_CTX *mem_ctx,
 	/* If we have notification's subscriptions attached to this handle, we
 	 * obviously remove them in order to avoid invoking them once all ROPs
 	 * are processed */
-	sl_to_remove = NULL;
+retry:
 	for (sl = emsmdbp_ctx->mstore_ctx->subscriptions; sl; sl = sl->next) {
-		if (handle == sl->subscription->handle) {
-			DLIST_ADD_END(sl_to_remove, sl, void);
+		if (sl->subscription == NULL) {
+			continue;
 		}
-	}
-	while ((sl = sl_to_remove) != NULL) {
-		DLIST_REMOVE(emsmdbp_ctx->mstore_ctx->subscriptions, sl);
-		DLIST_REMOVE(sl_to_remove, sl);
+		if (handle == sl->subscription->handle) {
+			DLIST_REMOVE(emsmdbp_ctx->mstore_ctx->subscriptions, sl);
+			goto retry;
+		}
 	}
 
 	/* We finally really delete the handle */
