@@ -722,6 +722,14 @@ static int emsmdbp_object_destructor(void *data)
 	case EMSMDBP_OBJECT_ATTACHMENT:
 	case EMSMDBP_OBJECT_FTCONTEXT:
 		break;
+	case EMSMDBP_OBJECT_PUSH:
+		if (object->object.push->fd > 0) {
+			if (close(object->object.push->fd) == -1) {
+				DEBUG(0, ("[%s:%d] Failed to close socket: %s\n", __FUNCTION__, __LINE__, strerror(errno)));
+			}
+			object->object.push->fd = 0;
+		}
+		break;
 	}
 	
 nomapistore:
@@ -753,6 +761,7 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_object_init(TALLOC_CTX *mem_ctx, struct 
 	object->object.folder = NULL;
 	object->object.message = NULL;
 	object->object.stream = NULL;
+	object->object.push = NULL;
 	object->backend_object = NULL;
 	object->parent_object = parent_object;
 	(void) talloc_reference(object, parent_object);
@@ -2170,6 +2179,42 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_object_subscription_init(TALLOC_CTX *mem
 
 	object->type = EMSMDBP_OBJECT_SUBSCRIPTION;
         object->object.subscription->subscription_list = NULL;
+
+	return object;
+}
+
+/**
+   \details Initialize a push notification object
+
+   \param mem_ctx pointer to the memory context
+   \param emsmdbp_ctx pointer to the emsmdb provider cotnext
+   \param parent emsmdbp object of the parent
+ */
+_PUBLIC_ struct emsmdbp_object *emsmdbp_object_push_init(
+		TALLOC_CTX *mem_ctx,
+		struct emsmdbp_context *emsmdbp_ctx,
+		struct emsmdbp_object *parent)
+{
+	struct emsmdbp_object *object = NULL;
+
+	/* Sanity checks */
+	if (!emsmdbp_ctx) return NULL;
+
+	object = emsmdbp_object_init(mem_ctx, emsmdbp_ctx, parent);
+	if (!object) return NULL;
+
+	object->object.push = talloc_zero(object, struct emsmdbp_object_push_notification);
+	if (!object->object.push) {
+		talloc_free(object);
+		return NULL;
+	}
+
+	object->type = EMSMDBP_OBJECT_PUSH;
+	object->object.push->addr = NULL;
+	object->object.push->context_data = NULL;
+	object->object.push->context_len = 0;
+	object->object.push->fd = 0;
+	object->object.push->handle = 0;
 
 	return object;
 }

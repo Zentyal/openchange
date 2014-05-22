@@ -991,6 +991,8 @@ static void dcesrv_EcGetMoreRpc(struct dcesrv_call_state *dce_call,
 
 /**
    \details exchange_emsmdb EcRRegisterPushNotification (0x4) function
+		Register a callback address for UDP notifications to be
+		dispatched for given user
 
    \param dce_call pointer to the session context
    \param mem_ctx pointer to the memory context
@@ -1002,9 +1004,11 @@ static enum MAPISTATUS dcesrv_EcRRegisterPushNotification(struct dcesrv_call_sta
 							  TALLOC_CTX *mem_ctx,
 							  struct EcRRegisterPushNotification *r)
 {
-	int				retval;
+	enum MAPISTATUS retval;
 	struct exchange_emsmdb_session	*session;
-	/* struct emsmdbp_context		*emsmdbp_ctx = NULL; */
+	struct emsmdbp_context		*emsmdbp_ctx = NULL;
+	struct mapi_handles		*push_rec = NULL;
+	struct emsmdbp_object   	*push_object = NULL;
 
 	DEBUG(3, ("exchange_emsmdb: EcRRegisterPushNotification (0x4)\n"));
 
@@ -1019,7 +1023,7 @@ static enum MAPISTATUS dcesrv_EcRRegisterPushNotification(struct dcesrv_call_sta
 	/* Retrieve the emsmdbp_context from the session management system */
 	session = dcesrv_find_emsmdb_session(&r->in.handle->uuid);
 	if (session) {
-		/* emsmdbp_ctx = (struct emsmdbp_context *)session->session->private_data; */
+		emsmdbp_ctx = (struct emsmdbp_context *)session->session->private_data;
 	} else {
 		r->out.handle->handle_type = 0;
 		r->out.handle->uuid = GUID_zero();
@@ -1027,22 +1031,65 @@ static enum MAPISTATUS dcesrv_EcRRegisterPushNotification(struct dcesrv_call_sta
 		return MAPI_E_LOGON_FAILED;
 	}
 
-	/* retval = mapistore_mgmt_interface_register_bind(emsmdbp_ctx->mstore_ctx->conn_info,
-							r->in.cbContext, r->in.rgbContext,
-							r->in.cbCallbackAddress, r->in.rgbCallbackAddress);
-	*/
-	retval = MAPI_E_SUCCESS;
-
-	/* DEBUG(0, ("[%s:%d]: retval = 0x%x\n", __FUNCTION__, __LINE__, retval)); */
-	if (retval == MAPI_E_SUCCESS) {
-		r->out.handle = r->in.handle;
-		/* FIXME: Create a notification object and return associated handle */
-		*r->out.hNotification = 244;
+	/* Check opaque context size */
+	if (r->in.cbContext > 0x10) {
+		r->out.result = MAPI_E_TOO_BIG;
+		DEBUG(0, ("[%s:%d] Context too big\n", __FUNCTION__, __LINE__));
+		return MAPI_E_TOO_BIG;
 	}
+
+	retval = mapi_handles_add(emsmdbp_ctx->handles_ctx, 0, &push_rec);
+	if (retval) {
+		r->out.result = retval;
+		DEBUG(0, ("[%s:%d] add handle error\n", __FUNCTION__, __LINE__));
+		return retval;
+	}
+
+	/* Create a push notification emsmdb_object */
+	push_object = emsmdbp_object_push_init(push_rec, emsmdbp_ctx, NULL);
+	mapi_handles_set_private_data(push_rec, push_object);
+
+	push_object->object.push->handle = push_rec->handle;
+	push_object->object.push->context_len = r->in.cbContext;
+	push_object->object.push->context_data = talloc_memdup(push_object, r->in.rgbContext, r->in.cbContext);
+	push_object->object.push->addr = talloc_memdup(push_object, r->in.rgbCallbackAddress, r->in.cbCallbackAddress);
+
+
+#ifdef SOCK_NONBLOCK
+	push_object->object.push->fd = socket(PF_INET, SOCK_DGRAM|SOCK_NONBLOCK, IPPROTO_UDP);
+#else /* SOCK_NONBLOCK */
+	{
+		int flags;
+		push_object->object.push->fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		flags = fcntl(push_object->object.push->fd, F_GETFL, 0);
+		fcntl(push_object->object.push->fd, F_SETFL, flags | O_NONBLOCK);
+	}
+#endif /* SOCK_NONBLOCK */
+	if (push_object->object.push->fd == -1) {
+		r->out.result = MAPI_E_CALL_FAILED;
+		DEBUG(0, ("[%s:%d] Failed to create socket for push notifications: %s\n", __FUNCTION__, __LINE__, strerror(errno)));
+		mapi_handles_delete(emsmdbp_ctx->handles_ctx, push_rec->handle);
+		return MAPI_E_CALL_FAILED;
+	} else {
+		if (connect(push_object->object.push->fd, push_object->object.push->addr, sizeof (struct sockaddr)) == -1) {
+			r->out.result = MAPI_E_CALL_FAILED;
+			DEBUG(0, ("[%s:%d] Failed to connect socket for push notifications: %s\n", __FUNCTION__, __LINE__, strerror(errno)));
+			mapi_handles_delete(emsmdbp_ctx->handles_ctx, push_rec->handle);
+			return MAPI_E_CALL_FAILED;
+		}
+	}
+	DEBUG(5, ("[%s:%d] UDP push notification context registered\n",
+			__FUNCTION__, __LINE__));
+
+	/* Reference the object from the emsmdbp_context */
+	emsmdbp_ctx->push_notify_ctx = push_object;
+
+	r->out.handle = r->in.handle;
+	*r->out.hNotification = push_rec->handle;
+	r->out.result = MAPI_E_SUCCESS;
 
 	return MAPI_E_SUCCESS;
 }
-
 
 /**
    \details exchange_emsmdb EcRUnregisterPushNotification (0x5) function
@@ -1057,8 +1104,74 @@ static enum MAPISTATUS dcesrv_EcRUnregisterPushNotification(struct dcesrv_call_s
 							    TALLOC_CTX *mem_ctx,
 							    struct EcRUnregisterPushNotification *r)
 {
-	DEBUG(3, ("exchange_emsmdb: EcRUnregisterPushNotification (0x5) not implemented\n"));
-	DCESRV_FAULT(DCERPC_FAULT_OP_RNG_ERROR);
+	enum MAPISTATUS retval;
+	struct exchange_emsmdb_session	*session;
+	struct emsmdbp_context		*emsmdbp_ctx = NULL;
+	struct mapi_handles		*push_rec = NULL;
+	struct emsmdbp_object   	*push_object = NULL;
+	void 				*data = NULL;
+
+	DEBUG(3, ("exchange_emsmdb: EcRUnregisterPushNotification (0x5)\n"));
+
+	if (!dcesrv_call_authenticated(dce_call)) {
+		DEBUG(1, ("No challenge requested by client, cannot authenticate\n"));
+		r->out.handle->handle_type = 0;
+		r->out.handle->uuid = GUID_zero();
+		r->out.result = DCERPC_FAULT_CONTEXT_MISMATCH;
+		return MAPI_E_LOGON_FAILED;
+	}
+
+	/* Retrieve the emsmdbp_context from the session management system */
+	session = dcesrv_find_emsmdb_session(&r->in.handle->uuid);
+	if (session) {
+		emsmdbp_ctx = (struct emsmdbp_context *)session->session->private_data;
+	} else {
+		r->out.handle->handle_type = 0;
+		r->out.handle->uuid = GUID_zero();
+		r->out.result = DCERPC_FAULT_CONTEXT_MISMATCH;
+		return MAPI_E_LOGON_FAILED;
+	}
+
+	/* Search the handle */
+	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, r->in.unknown[0], &push_rec);
+	if (retval) {
+		r->out.result = MAPI_E_INVALID_OBJECT;
+		DEBUG(0, ("[%s:%d] handle (0x%02x) not found\n", __FUNCTION__, __LINE__, r->in.unknown[0]));
+		return MAPI_E_INVALID_OBJECT;
+	}
+
+	retval = mapi_handles_get_private_data(push_rec, &data);
+	if (retval) {
+		r->out.result = retval;
+		DEBUG(0, ("[%s:%d] handle 0x%02x data not found\n", __FUNCTION__, __LINE__, r->in.unknown[0]));
+		return retval;
+	}
+	push_object = (struct emsmdbp_object *)data;
+
+	/* Close the socket */
+	if (push_object->object.push->fd > 0) {
+		if (close(push_object->object.push->fd) == -1) {
+			r->out.result = MAPI_E_CALL_FAILED;
+			DEBUG(0, ("[%s:%d] Failed to close socket: %s\n", __FUNCTION__, __LINE__, strerror(errno)));
+			return MAPI_E_CALL_FAILED;
+		} else {
+			push_object->object.push->fd = 0;
+		}
+	}
+	TALLOC_FREE(emsmdbp_ctx->push_notify_ctx);
+
+	/* Delete the handle */
+	retval = mapi_handles_delete(emsmdbp_ctx->handles_ctx, r->in.unknown[0]);
+	if (retval) {
+		r->out.result = retval;
+		DEBUG(0, ("[%s:%d] delete handle 0x%02x error: %s\n", __FUNCTION__, __LINE__, r->in.unknown[0], mapi_get_errstr(retval)));
+		return retval;
+	}
+
+	r->out.handle = r->in.handle;
+	r->out.result = MAPI_E_SUCCESS;
+
+	return MAPI_E_SUCCESS;
 }
 
 

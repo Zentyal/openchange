@@ -557,6 +557,23 @@ end:
 	return success;
 }
 
+static void libmapiserver_send_udp_notification(
+		TALLOC_CTX *mem_ctx,
+		struct emsmdbp_context *emsmdbp_ctx)
+{
+	/* Sanity checks */
+	if (!emsmdbp_ctx->push_notify_ctx) return;
+	if (emsmdbp_ctx->push_notify_ctx->object.push->fd <= 0) return;
+
+	if (send(emsmdbp_ctx->push_notify_ctx->object.push->fd,
+			(const void *)emsmdbp_ctx->push_notify_ctx->object.push->context_data,
+			emsmdbp_ctx->push_notify_ctx->object.push->context_len, MSG_DONTWAIT) == -1) {
+		DEBUG(0, ("[%s:%d] Failed to send UDP push notification: %s\n", __FUNCTION__, __LINE__, strerror(errno)));
+		return;
+	}
+	DEBUG(5, ("[%s:%d] Sent UDP push notification\n", __FUNCTION__, __LINE__));
+}
+
 static bool libmapiserver_notification_match_subscription(
 		struct mapistore_notification *notification,
 		struct mapistore_subscription *subscription)
@@ -727,6 +744,9 @@ _PUBLIC_ void libmapiserver_process_notifications(
 				*idxp += 1;
 			}
 		}
+
+		/* Not sure if we have to send an UDP notification for each pending one or just one */
+		libmapiserver_send_udp_notification(mem_ctx, emsmdbp_ctx);
 	}
 
 	/* Once processed, clear notification list */

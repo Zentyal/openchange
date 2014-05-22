@@ -45,6 +45,7 @@
 #endif
 #endif
 
+struct emsmdbp_object;
 struct emsmdbp_context {
 	char					*szUserDN;
 	char					*szDisplayName;
@@ -55,6 +56,7 @@ struct emsmdbp_context {
 	struct ldb_context			*samdb_ctx;
 	struct mapistore_context		*mstore_ctx;
 	struct mapi_handles_context		*handles_ctx;
+	struct emsmdbp_object			*push_notify_ctx;
 
 	TALLOC_CTX				*mem_ctx;
 	struct mapiproxy_broker			*broker;
@@ -108,16 +110,17 @@ struct emsmdbp_syncconfigure_request {
 };
 
 enum emsmdbp_object_type {
-	EMSMDBP_OBJECT_UNDEF		= 0x0,
-	EMSMDBP_OBJECT_MAILBOX		= 0x1,
-	EMSMDBP_OBJECT_FOLDER		= 0x2,
-	EMSMDBP_OBJECT_MESSAGE		= 0x3,
-	EMSMDBP_OBJECT_TABLE		= 0x4,
-	EMSMDBP_OBJECT_STREAM		= 0x5,
-	EMSMDBP_OBJECT_ATTACHMENT	= 0x6,
-        EMSMDBP_OBJECT_SUBSCRIPTION     = 0x7,
-	EMSMDBP_OBJECT_FTCONTEXT	= 0x8, /* Fast Transfer */
-	EMSMDBP_OBJECT_SYNCCONTEXT	= 0x9
+	EMSMDBP_OBJECT_UNDEF			= 0x0,
+	EMSMDBP_OBJECT_MAILBOX		 	= 0x1,
+	EMSMDBP_OBJECT_FOLDER			= 0x2,
+	EMSMDBP_OBJECT_MESSAGE		 	= 0x3,
+	EMSMDBP_OBJECT_TABLE		 	= 0x4,
+	EMSMDBP_OBJECT_STREAM		 	= 0x5,
+	EMSMDBP_OBJECT_ATTACHMENT	 	= 0x6,
+	EMSMDBP_OBJECT_SUBSCRIPTION      	= 0x7,
+	EMSMDBP_OBJECT_FTCONTEXT	 	= 0x8, /* Fast Transfer */
+	EMSMDBP_OBJECT_SYNCCONTEXT	 	= 0x9,
+	EMSMDBP_OBJECT_PUSH			= 0xA,
 };
 
 struct emsmdbp_object_mailbox {
@@ -220,16 +223,25 @@ struct emsmdbp_object_ftcontext {
 	uint32_t		next_cutmark_idx;
 };
 
+struct emsmdbp_object_push_notification {
+	uint32_t		handle;
+	int			fd;
+	struct sockaddr		*addr;
+	uint16_t		context_len;
+	uint8_t			*context_data;
+};
+
 union emsmdbp_objects {
-	struct emsmdbp_object_mailbox	*mailbox;
-	struct emsmdbp_object_folder	*folder;
-	struct emsmdbp_object_message	*message;
-	struct emsmdbp_object_table	*table;
-	struct emsmdbp_object_stream	*stream;
-	struct emsmdbp_object_attachment *attachment;
-	struct emsmdbp_object_subscription *subscription;
-	struct emsmdbp_object_synccontext *synccontext;
-	struct emsmdbp_object_ftcontext *ftcontext;
+	struct emsmdbp_object_mailbox		*mailbox;
+	struct emsmdbp_object_folder		*folder;
+	struct emsmdbp_object_message		*message;
+	struct emsmdbp_object_table		*table;
+	struct emsmdbp_object_stream		*stream;
+	struct emsmdbp_object_attachment	*attachment;
+	struct emsmdbp_object_subscription	*subscription;
+	struct emsmdbp_object_synccontext	*synccontext;
+	struct emsmdbp_object_ftcontext		*ftcontext;
+	struct emsmdbp_object_push_notification	*push;
 };
 
 struct emsmdbp_object {
@@ -357,6 +369,7 @@ DATA_BLOB emsmdbp_stream_read_buffer(struct emsmdbp_stream *, uint32_t);
 void emsmdbp_stream_write_buffer(TALLOC_CTX *, struct emsmdbp_stream *, DATA_BLOB);
 void emsmdbp_fill_table_row_blob(TALLOC_CTX *, struct emsmdbp_context *, DATA_BLOB *, uint16_t, enum MAPITAGS *, void **, enum MAPISTATUS *);
 void emsmdbp_fill_row_blob(TALLOC_CTX *, struct emsmdbp_context *, uint8_t *, DATA_BLOB *,struct SPropTagArray *, void **, enum MAPISTATUS *, bool *);
+struct emsmdbp_object *emsmdbp_object_push_init(TALLOC_CTX *, struct emsmdbp_context *, struct emsmdbp_object *);
 
 /* definitions from oxcfold.c */
 enum MAPISTATUS EcDoRpc_RopOpenFolder(TALLOC_CTX *, struct emsmdbp_context *, struct EcDoRpc_MAPI_REQ *, struct EcDoRpc_MAPI_REPL *, uint32_t *, uint16_t *);
