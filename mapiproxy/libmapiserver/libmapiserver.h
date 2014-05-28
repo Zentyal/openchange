@@ -346,6 +346,13 @@ struct emsmdbp_context;
 #define	SIZE_DFLT_ROPNOTIFY                     8
 
 /**
+   \details Pending Rop has fixed response size for:
+   -# RopId: uint8_t
+   -# SessionIndex: uint16_t
+ */
+#define	SIZE_DFLT_ROPPENDING			3
+
+/**
    \details GetSearchCriteria Rop has fixed response size for:
    -# RestrictionDataSize: uint16_t
    -# LogonId: uint8_t
@@ -509,6 +516,7 @@ uint16_t libmapiserver_RopOpenEmbeddedMessage_size(struct EcDoRpc_MAPI_REPL *res
 
 /* definitions from libmapiserver_oxcnotif.c */
 uint16_t libmapiserver_RopRegisterNotification_size(void);
+uint16_t libmapiserver_RopPending_size(void);
 uint16_t libmapiserver_RopNotify_size(struct EcDoRpc_MAPI_REPL *);
 void libmapiserver_process_queued_notifications(struct emsmdbp_context *);
 void libmapiserver_process_notifications(TALLOC_CTX *, struct emsmdbp_context *, struct mapi_response *, uint32_t *, uint16_t *);

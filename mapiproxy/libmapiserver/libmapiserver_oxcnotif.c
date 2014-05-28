@@ -42,6 +42,16 @@ _PUBLIC_ uint16_t libmapiserver_RopRegisterNotification_size(void)
 }
 
 /**
+  \details Calculate Pending ROP response size
+
+  \return Size of Pending ROP response
+ */
+_PUBLIC_ uint16_t libmapiserver_RopPending_size(void)
+{
+	return SIZE_DFLT_ROPPENDING;
+}
+
+/**
   \details Calculate Notify ROP response size
 
   \return Size of Notify ROP response
@@ -723,6 +733,7 @@ _PUBLIC_ void libmapiserver_process_notifications(
 {
 	struct mapistore_notification_list *nl;
 	struct mapistore_subscription_list *sl;
+	bool attach_rop_pending = false;
 
 	for (nl = emsmdbp_ctx->mstore_ctx->notifications; nl; nl = nl->next) {
 		if (nl->notification == NULL) {
@@ -742,11 +753,25 @@ _PUBLIC_ void libmapiserver_process_notifications(
 				mapi_response->mapi_repl = talloc_realloc(mem_ctx, mapi_response->mapi_repl, struct EcDoRpc_MAPI_REPL, *idxp + 2);
 				libmapiserver_notification_fill(mem_ctx, emsmdbp_ctx, &(mapi_response->mapi_repl[*idxp]), nl->notification, sl->subscription, sizep);
 				*idxp += 1;
+				attach_rop_pending = true;
 			}
 		}
 
 		/* Not sure if we have to send an UDP notification for each pending one or just one */
 		libmapiserver_send_udp_notification(mem_ctx, emsmdbp_ctx);
+	}
+
+	if (attach_rop_pending) {
+		struct EcDoRpc_MAPI_REPL *mapi_repl;
+		struct Pending_repl *reply;
+
+		mapi_repl = &(mapi_response->mapi_repl[*idxp]);
+		mapi_repl->opnum = op_MAPI_Pending;
+		reply = &mapi_repl->u.mapi_Pending;
+		reply->SessionIndex = 0;
+
+		*sizep += libmapiserver_RopPending_size();
+		*idxp += 1;
 	}
 
 	/* Once processed, clear notification list */
