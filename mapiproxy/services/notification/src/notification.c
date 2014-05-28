@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <bsd/libutil.h>
 #include <talloc.h>
+#include <err.h>
 
 #include "notification.h"
 #include "notification_config.h"
@@ -113,8 +114,7 @@ main(int argc, const char *argv[])
 	poptContext pc;
 	struct context *ctx;
 	struct pidfh *pfh;
-	struct sigaction sa;
-	pid_t otherpid, childpid;
+	pid_t otherpid;
 	enum {
 		OPT_DAEMON = 1000,
 		OPT_DEBUG,
