@@ -6,12 +6,14 @@
 #include <amqp.h>
 #include <json-c/json.h>
 
-#include <mapistore/mapistore.h>
-#include <mapistore/mapistore_errors.h>
+#include "mapiproxy/libmapistore/mapistore.h"
+#include "mapiproxy/libmapistore/mapistore_private.h"
+#include "mapiproxy/libmapiproxy/libmapiproxy.h"
+#include "mapiproxy/libmapistore/mapistore_errors.h"
 
 #include "notification.h"
 
-	void
+	static void
 notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
 		const char *username, uint64_t mid, uint64_t fid,
 		const char *message_uri)
@@ -98,14 +100,13 @@ notification_publish(TALLOC_CTX *mem_ctx, const struct context *ctx,
 }
 
 
-	struct ldb_dn *
+	static struct ldb_dn *
 fetch_mailbox_dn(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
 		const char *username)
 {
 	int 			ret;
 	struct ldb_result 	*res;
 	const char * const	attrs[] = { "*", NULL };
-	const char 		*dnstr;
 	struct ldb_dn 		*dn;
 	const char 		*filter;
 
@@ -134,7 +135,7 @@ fetch_mailbox_dn(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
 	return dn;
 }
 
-	char *
+	static char *
 fetch_folder_uri(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
 		struct ldb_dn *mailbox_dn, const char *folder)
 {
@@ -178,7 +179,7 @@ fetch_folder_uri(TALLOC_CTX *mem_ctx, struct ldb_context *ldb_ctx,
 	return uri;
 }
 
-	char *
+	static char *
 fetch_message_uri(TALLOC_CTX *mem_ctx, const char *backend,
 		const char *folder_uri, const char *message_id)
 {
@@ -210,7 +211,8 @@ fetch_message_uri(TALLOC_CTX *mem_ctx, const char *backend,
 	return uri;
 }
 
-bool fetch_folder_fid(struct ldb_context *ldb_ctx,
+	static bool
+fetch_folder_fid(struct ldb_context *ldb_ctx,
 		struct mapistore_context *mstore_ctx,
 		const char *username,
 		const char *folder_uri,

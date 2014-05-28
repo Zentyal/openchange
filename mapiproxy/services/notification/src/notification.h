@@ -41,3 +41,7 @@ bool broker_connect(struct context *);
 bool broker_declare(struct context *);
 bool broker_start_consumer(struct context *);
 void broker_consume(struct context *);
+
+/* Definitions from notification_register.c */
+void notification_register_message(TALLOC_CTX *, const struct context *,
+		const char *, const char *, uint32_t);
