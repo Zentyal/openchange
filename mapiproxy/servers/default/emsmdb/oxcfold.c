@@ -212,23 +212,23 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetHierarchyTable(TALLOC_CTX *mem_ctx,
 		DEBUG(5, ("  notifications skipped\n"));
 	} else {
 		/* we attach the subscription to the session object */
-		object->object.subscription->subscription_list = talloc_zero(object, struct mapistore_subscription_list);
+		object->object.table->subscription_list = talloc_zero(object, struct mapistore_subscription_list);
 
-		DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->subscriptions, object->object.subscription->subscription_list, void);
+		DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->subscriptions, object->object.table->subscription_list, void);
 		/* talloc_reference(object, subscription_list); */
 
-		object->object.subscription->subscription_list->subscription = talloc_zero(object->object.subscription->subscription_list, struct mapistore_subscription);
-		object->object.subscription->subscription_list->subscription->handle = rec->handle;
-		object->object.subscription->subscription_list->subscription->notification_types = fnevTableModified;
-		object->object.subscription->subscription_list->subscription->parameters.table_parameters.folder_id = folderID;
+		object->object.table->subscription_list->subscription = talloc_zero(object->object.table->subscription_list, struct mapistore_subscription);
+		object->object.table->subscription_list->subscription->handle = rec->handle;
+		object->object.table->subscription_list->subscription->notification_types = fnevTableModified;
+		object->object.table->subscription_list->subscription->parameters.table_parameters.folder_id = folderID;
 		if ((mapi_req->u.mapi_GetHierarchyTable.TableFlags & TableFlags_Associated)) {
-			object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_FAI_TABLE;
+			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_FAI_TABLE;
 		} else {
-			object->object.subscription->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
+			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_FOLDER_TABLE;
 		}
 
-		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder hierarchy table(handle=0x%x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
-						rec->handle, emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
+		DEBUG(5, ("[%s:%d] Attached subscription to hierarchy table (handle=0x%02x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+				__FUNCTION__, __LINE__, rec->handle, emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
 	}
 
 end:
@@ -354,7 +354,8 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetContentsTable(TALLOC_CTX *mem_ctx,
 			object->object.table->subscription_list->subscription->parameters.table_parameters.table_type = MAPISTORE_MESSAGE_TABLE;
 		}
 
-		DEBUG(5, ("exchange_emsmdb: [OXCFOLD]: Attached subscription to folder content table(handle=0x%x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+		DEBUG(5, ("[%s:%d] Attached subscription to content table (handle=0x%02x) on channel %d (subscription handle=0x%x, fid=0x%.16"PRIx64"(%"PRIu64"))\n",
+				__FUNCTION__, __LINE__,
 				rec->handle, emsmdbp_ctx->broker_channel, rec->handle, folderID, folderID));
         }
 
