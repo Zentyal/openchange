@@ -15,7 +15,7 @@
 #include "notification.h"
 
 #include <param.h>
-#include <mapistore/mapistore.h>
+#include "mapiproxy/libmapistore/mapistore.h"
 
 volatile sig_atomic_t abort_flag = 0;
 
