@@ -714,13 +714,13 @@ _PUBLIC_ void libmapiserver_process_queued_notifications(struct emsmdbp_context 
 					&message))
 		{
 			struct mapistore_notification_list *nl = NULL;
+			struct mapistore_notification_list *nl2 = NULL;
 
 			/* Here we should inspect the message headers to check the type of notification */
 			nl = libmapiserver_process_queued_newmail(emsmdbp_ctx->mstore_ctx, &message);
-			while (nl) {
-				/* Add to the notification queue */
-				DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->notifications, nl, void);
-				nl = nl->next;
+			while ((nl2 = nl) != NULL) {
+				DLIST_REMOVE(nl, nl2);
+				DLIST_ADD_END(emsmdbp_ctx->mstore_ctx->notifications, nl2, void);
 			}
 
 			/* Free memory */
