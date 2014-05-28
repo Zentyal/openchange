@@ -45,3 +45,6 @@ void broker_consume(struct context *);
 /* Definitions from notification_register.c */
 void notification_register_message(TALLOC_CTX *, const struct context *,
 		const char *, const char *, uint32_t);
+
+/* Definitions from notification_config.c */
+void read_config(struct context *, const char *);

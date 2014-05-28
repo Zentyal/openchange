@@ -13,7 +13,6 @@
 #include <err.h>
 
 #include "notification.h"
-#include "notification_config.h"
 
 #include <param.h>
 #include <mapistore/mapistore.h>

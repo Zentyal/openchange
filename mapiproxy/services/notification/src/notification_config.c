@@ -5,7 +5,6 @@
 #include <talloc.h>
 
 #include "notification.h"
-#include "notification_config.h"
 
 /**
  * Read config file
