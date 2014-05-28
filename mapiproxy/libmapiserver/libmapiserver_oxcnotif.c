@@ -356,6 +356,11 @@ static bool libmapiserver_notification_fill(
 					reply->NotificationData.HierarchyTableChange.HierarchyTableChangeUnion.HierarchyRowAddedNotification.Columns = *table_row;
 					break;
 				case MAPISTORE_OBJECT_MODIFIED:
+					reply->NotificationData.HierarchyTableChange.TableEvent = TABLE_ROW_MODIFIED;
+					reply->NotificationData.HierarchyTableChange.HierarchyTableChangeUnion.HierarchyRowModifiedNotification.FID = notification->parameters.table_parameters.folder_id;
+					reply->NotificationData.HierarchyTableChange.HierarchyTableChangeUnion.HierarchyRowModifiedNotification.InsertAfterFID = prev_fid;
+					reply->NotificationData.HierarchyTableChange.HierarchyTableChangeUnion.HierarchyRowModifiedNotification.Columns = *table_row;
+					break;
 				case MAPISTORE_OBJECT_DELETED:
 				case MAPISTORE_OBJECT_COPIED:
 				case MAPISTORE_OBJECT_MOVED:
