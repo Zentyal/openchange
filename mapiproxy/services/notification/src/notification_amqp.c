@@ -11,7 +11,6 @@
 	char *
 broker_err(TALLOC_CTX *mem_ctx, amqp_rpc_reply_t r)
 {
-	char *ret;
 	switch (r.reply_type) {
 	case AMQP_RESPONSE_NORMAL:
 		return talloc_strdup(mem_ctx, "normal response");
