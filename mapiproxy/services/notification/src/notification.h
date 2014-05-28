@@ -2,6 +2,7 @@
 
 #include <amqp.h>
 #include <talloc.h>
+#include <stdbool.h>
 
 #define DEFAULT_CONFIG_FILE "/etc/openchange/notification-service.cfg"
 
@@ -32,5 +33,11 @@ struct context {
 void notification_register_message(TALLOC_CTX *, const struct context *,
 		const char *, const char *, uint32_t);
 
+/* Definitions from notification_amqp.c */
 char *broker_err(TALLOC_CTX *, amqp_rpc_reply_t);
-
+bool broker_is_alive(struct context *);
+void broker_disconnect(struct context *);
+bool broker_connect(struct context *);
+bool broker_declare(struct context *);
+bool broker_start_consumer(struct context *);
+void broker_consume(struct context *);

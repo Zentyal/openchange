@@ -14,7 +14,6 @@
 
 #include "notification.h"
 #include "notification_config.h"
-#include "notification_amqp.h"
 
 #include <param.h>
 #include <mapistore/mapistore.h>
