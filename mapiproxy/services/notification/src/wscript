@@ -65,21 +65,21 @@ def configure(ctx):
                   mandatory=True)
 
     ctx.check_cfg(package='libconfig',
-                  args=['libconfig >= 1.4.9', '--cflags', '--libs'],
+                  args=['libconfig >= 1.4.8', '--cflags', '--libs'],
                   uselib_store='LIBCONFIG',
-                  msg="Check for libconfig 1.4.9",
+                  msg="Check for libconfig 1.4.8",
                   mandatory=True)
 
     ctx.check_cfg(package='json-c',
-                  args=['json-c >= 0.11.99', '--cflags', '--libs'],
+                  args=['json-c >= 0.11', '--cflags', '--libs'],
                   uselib_store='JSON-C',
-                  msg="Check for json-c 0.11.99",
+                  msg="Check for json-c 0.11",
                   mandatory=True)
 
     ctx.check_cfg(package='libssl',
-                  args=['libssl >= 1.0.1f', '--cflags', '--libs'],
+                  args=['libssl >= 1.0.1e', '--cflags', '--libs'],
                   uselib_store='LIBSSL',
-                  msg="Check for libssl 1.0.1f",
+                  msg="Check for libssl 1.0.1e",
                   mandatory=True)
 
     ctx.check_cfg(package='librabbitmq',
@@ -98,6 +98,12 @@ def configure(ctx):
                   args=['samba-hostconfig >= 0.0.1', '--cflags', '--libs'],
                   uselib_store='SAMBA_HOSTCONFIG',
                   msg="Check for samba-hostconfig 0.0.1",
+                  mandatory=True)
+
+    ctx.check_cfg(package='libmapi',
+                  args=['libmapi >= 2.0', '--cflags', '--libs'],
+                  uselib_store='MAPI',
+                  msg="Check for libmapi 2.0",
                   mandatory=True)
 
     ctx.check_cfg(package='libmapistore',
@@ -121,8 +127,8 @@ def build(bld):
 	    'notification_register.c',
             ],
         target = 'openchange-notification-service',
-        includes = ['.', '..'],
+        includes = ['.', '..', '../../../..'],
         cflags = ['-ggdb'],
         depends_on = [APPNAME],
         #use = [APPNAME, 'LIBMAPI', 'POPT', 'RABBITMQ'])
-        use = [APPNAME, 'POPT', 'TALLOC', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ', 'SAMBA_HOSTCONFIG', 'MAPISTORE', 'MAPIPROXY'])
+        use = [APPNAME, 'POPT', 'TALLOC', 'JSON-C', 'LIBCONFIG', 'LIBBSD', 'LIBSSL', 'RABBITMQ', 'SAMBA_HOSTCONFIG', 'MAPI', 'MAPISTORE', 'MAPIPROXY'])

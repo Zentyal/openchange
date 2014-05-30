@@ -1594,7 +1594,7 @@ bin/ocnotification: mapiproxy/services/notification/src/notification_amqp.o \
 					mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION) \
 					libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS) $(RABBITMQ_LIBS) -lpopt -lbsd
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
 
 clean:: ocnotification-clean
 
