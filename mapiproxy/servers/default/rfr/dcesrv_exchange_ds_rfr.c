@@ -38,7 +38,7 @@
    \note We incorrectly assume input pUserDN is correct and available,
    but it is OK for now.
 
-   \return MAPI_E_SUCCESS on success
+   \return MAPI_SUCCESS on success
  */
 static enum MAPISTATUS dcesrv_RfrGetNewDSA(struct dcesrv_call_state *dce_call,
 					   TALLOC_CTX *mem_ctx,
@@ -75,9 +75,9 @@ static enum MAPISTATUS dcesrv_RfrGetNewDSA(struct dcesrv_call_state *dce_call,
 	r->out.ppszServer = talloc_array(mem_ctx, const char *, 2);
 	r->out.ppszServer[0] = strlower_talloc(mem_ctx, fqdn);
 	r->out.ppszServer[1] = NULL;
-	r->out.result = MAPI_E_SUCCESS;
+	r->out.result = MAPI_SUCCESS;
 
-	return MAPI_E_SUCCESS;
+	return MAPI_SUCCESS;
 }
 
 
@@ -88,7 +88,7 @@ static enum MAPISTATUS dcesrv_RfrGetNewDSA(struct dcesrv_call_state *dce_call,
    \param mem_ctx pointer to the memory context
    \param r pointer to the RfrGetFQDNFromLegacyDN request data
 
-   \return MAPI_E_SUCCESS on success
+   \return MAPI_SUCCESS on success
  */
 static enum MAPISTATUS dcesrv_RfrGetFQDNFromLegacyDN(struct dcesrv_call_state *dce_call,
 						     TALLOC_CTX *mem_ctx,
@@ -120,9 +120,9 @@ static enum MAPISTATUS dcesrv_RfrGetFQDNFromLegacyDN(struct dcesrv_call_state *d
 	r->out.ppszServerFQDN = talloc_array(mem_ctx, const char *, 2);
 	r->out.ppszServerFQDN[0] = strlower_talloc(mem_ctx, fqdn);
 	talloc_free(fqdn);
-	r->out.result = MAPI_E_SUCCESS;
+	r->out.result = MAPI_SUCCESS;
 
-	return MAPI_E_SUCCESS;
+	return MAPI_SUCCESS;
 }
 
 
