@@ -75,6 +75,8 @@
 #undef _PRINTF_ATTRIBUTE
 #define _PRINTF_ATTRIBUTE(a1, a2) PRINTF_ATTRIBUTE(a1, a2)
 
+#define MAPI_E_SUCCESS		MAPI_SUCCESS
+
 #ifndef __BEGIN_DECLS
 #ifdef __cplusplus
 #define __BEGIN_DECLS		extern "C" {
