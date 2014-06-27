@@ -24,6 +24,7 @@ from samba import Ldb
 from abc import ABCMeta, abstractmethod
 import ldb
 import os
+import threading
 
 
 class OpenchangeDB:
@@ -70,8 +71,10 @@ class OpenchangeDBWithMySQL(OpenchangeDB):
         return MySQLdb.connect(host=host, user=user, passwd=passwd, db=db)
 
     def _select(self, sql, params=()):
-        cur = self.db.cursor()
         try:
+            qlock = threading.RLock()
+            qlock.acquire()
+            cur = self.db.cursor()
             cur.execute(sql, params)
             rows = cur.fetchall()
             cur.close()
@@ -88,6 +91,8 @@ class OpenchangeDBWithMySQL(OpenchangeDB):
         except MySQLdb.ProgrammingError as e:
             print "Error executing %s with %r: %r" % (sql, params, e)
             raise e
+        finally:
+            qlock.release()
 
     def get_calendar_uri(self, usercn, email):
         mailbox_name = email.split('@')[0]
