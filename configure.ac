@@ -390,8 +390,6 @@ PKG_CHECK_MODULES(SAMBASERVER, dcerpc_server samdb, [], [AC_MSG_WARN(No mapiprox
 PKG_CHECK_MODULES(TDB, tdb)
 PKG_CHECK_MODULES(LDB, ldb)
 
-PKG_CHECK_MODULES(CCAN, ccan, [], [AC_MSG_ERROR(Couldn't find libccan. it should be provided by samba-dev package)])
-
 dnl ---------------------------------------------------------------------------
 dnl Check a particular Samba4 git revision
 dnl ---------------------------------------------------------------------------
