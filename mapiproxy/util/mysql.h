@@ -22,6 +22,7 @@ bool create_schema(MYSQL *, char *);
 bool convert_string_to_ull(const char *, uint64_t *);
 
 MYSQL* create_connection(const char *, MYSQL **);
+void release_connection(MYSQL *);
 
 enum MYSQLRESULT { MYSQL_SUCCESS, MYSQL_NOT_FOUND, MYSQL_ERROR };
 

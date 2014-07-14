@@ -150,6 +150,10 @@ end:
 	return *conn;
 }
 
+void release_connection(MYSQL *conn)
+{
+	// Do nothing
+}
 
 enum MYSQLRESULT execute_query(MYSQL *conn, const char *sql)
 {

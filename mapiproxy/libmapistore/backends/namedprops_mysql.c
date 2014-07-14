@@ -206,6 +206,13 @@ static enum mapistore_error transaction_commit(struct namedprops_context *self)
 	return MAPISTORE_SUCCESS;
 }
 
+static int mapistore_namedprops_mysql_destructor(struct namedprops_context *self)
+{
+	MYSQL *conn = self->data;
+	release_connection(conn);
+	return 0;
+}
+
 static bool is_schema_created(MYSQL *conn)
 {
 	return table_exists(conn, TABLE_NAME);
@@ -392,6 +399,8 @@ enum mapistore_error mapistore_namedprops_mysql_init(TALLOC_CTX *mem_ctx,
 	MYSQL *conn;
 	create_connection(connection_string, &conn);
 	nprops->data = conn;
+	OPENCHANGE_RETVAL_IF(!nprops->data, MAPI_E_NOT_INITIALIZED, nprops);
+	talloc_set_destructor(nprops, mapistore_namedprops_mysql_destructor);
 
 	// 2) Initialize database
 	bool should_initialize_database = (!is_schema_created(conn) ||

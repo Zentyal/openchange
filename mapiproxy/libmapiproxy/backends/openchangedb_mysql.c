@@ -2896,6 +2896,13 @@ static const char *openchangedb_data_dir(void)
 	return OPENCHANGEDB_DATA_DIR; // defined on compilation time
 }
 
+static int openchangedb_mysql_destructor(struct openchangedb_context *oc_ctx)
+{
+	MYSQL *conn = oc_ctx->data;
+	release_connection(conn);
+	return 0;
+}
+
 _PUBLIC_
 enum MAPISTATUS openchangedb_mysql_initialize(TALLOC_CTX *mem_ctx,
 					      const char *connection_string,
@@ -2965,6 +2972,7 @@ enum MAPISTATUS openchangedb_mysql_initialize(TALLOC_CTX *mem_ctx,
 	// Connect to mysql
 	oc_ctx->data = create_connection(connection_string, &conn);
 	OPENCHANGE_RETVAL_IF(!oc_ctx->data, MAPI_E_NOT_INITIALIZED, oc_ctx);
+	talloc_set_destructor(oc_ctx, openchangedb_mysql_destructor);
 	if (!table_exists(oc_ctx->data, "folders")) {
 		bool schema_created;
 		DEBUG(0, ("Creating schema for openchangedb on mysql %s",
