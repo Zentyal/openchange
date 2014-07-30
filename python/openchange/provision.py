@@ -683,6 +683,22 @@ def register(setup_path, names, lp, creds, reporter=None):
                " objects (%d): %s" % ldb_error.args)
 
 
+def check_unregister(names, lp, creds):
+    """Check if we can unregister an OpenChange server.
+
+    :param names: Provision Names object
+    :param lp: Loadparm context
+    :param creds: Credentials context
+
+    :return: string with server usages that avoid to unregister the server
+             or None in case we are able to unregister this server.
+    """
+    server_uses = checkusage(names, lp, creds)
+    if len(server_uses) > 0:
+        return ', '.join(server_uses)
+    return None
+
+
 def unregister(setup_path, names, lp, creds, reporter=None):
     """Unregisters an OpenChange server.
 
@@ -704,9 +720,9 @@ def unregister(setup_path, names, lp, creds, reporter=None):
     if reporter is None:
         reporter = TextProgressReporter()
 
-    server_uses = checkusage(names, lp, creds)
-    if (len(server_uses) > 0):
-        raise ServerInUseError(', '.join(server_uses))
+    server_uses = check_unregister(names, lp, creds)
+    if server_uses is not None:
+        raise ServerInUseError(server_uses)
 
     try:
         # Unregister the server
