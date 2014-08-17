@@ -583,9 +583,16 @@ static struct pidtags pidtags[] = {
 _PUBLIC_ const char *openchangedb_property_get_attribute(uint32_t proptag)
 {
 	uint32_t i;
+	uint32_t proptag_search;
+
+	if ((proptag & 0x0FFF) == PT_STRING8) {
+		proptag_search = ((proptag & 0xfffff000) | PT_UNICODE);
+	} else {
+		proptag_search = proptag;
+	}
 	
 	for (i = 0; pidtags[i].pidtag; i++) {
-		if (pidtags[i].proptag == proptag) {
+		if (pidtags[i].proptag == proptag_search) {
 			return pidtags[i].pidtag;
 		}
 	}
