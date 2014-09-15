@@ -964,7 +964,15 @@ bin/mapistore_test: 	mapiproxy/libmapistore/tests/mapistore_test.o		\
 			mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)	\
 			mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
-	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt -L. libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
+
+mapistore_tool: bin/mapistore_tool
+
+bin/mapistore_tool: 	testprogs/mapistore_tool.o		\
+			mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)	\
+			mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
+	@echo "Linking $@"
+	@$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) -lpopt
 
 mapistore_clean:
 	rm -f mapiproxy/libmapistore/tests/*.o
@@ -973,6 +981,8 @@ mapistore_clean:
 	rm -f mapiproxy/libmapistore/backends/*.po
 	rm -f mapiproxy/libmapistore/backends/*.o
 	rm -f bin/mapistore_test
+	rm -f testprogs/mapistore_tool.o
+	rm -f bin/mapistore_tool
 
 clean:: mapistore_clean
 
@@ -1323,14 +1333,15 @@ bin/openchange-testsuite: 	testsuite/testsuite.o					\
 				testsuite/libmapistore/mapistore_namedprops.c		\
 				testsuite/libmapistore/mapistore_namedprops_mysql.c	\
 				testsuite/libmapistore/mapistore_namedprops_tdb.c	\
-				testsuite/libmapistore/mapistore_indexing.c		\
-				testsuite/libmapi/mapi_property.c			\
-				testsuite/libmapiproxy/openchangedb.c			\
+				testsuite/libmapistore/mapistore_indexing.c			\
+				testsuite/libmapiproxy/openchangedb.c				\
 				testsuite/libmapiproxy/openchangedb_multitenancy.c	\
+				testsuite/mapiproxy/util/mysql.c					\
+				testsuite/libmapi/mapi_property.c					\
 				mapiproxy/libmapistore.$(SHLIBEXT).$(PACKAGE_VERSION)	\
 				mapiproxy/libmapiproxy.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
-	@$(CC) $(CFLAGS) $(CHECK_CFLAGS) $(TDB_CFLAGS) -I. -Itestsuite/ -Imapiproxy -o $@ $^ $(LDFLAGS) $(LIBS) $(TDB_LIBS) $(CHECK_LIBS) $(MYSQL_LIBS) libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
+	@$(CC) $(CFLAGS) $(CHECK_CFLAGS) $(TDB_CFLAGS) -I. -Itestsuite/ -Imapiproxy -o $@ $^ $(LDFLAGS) $(LIBS) $(TDB_LIBS) $(CHECK_LIBS) $(MYSQL_LIBS) -lpopt libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 
 testsuite-check:	testsuite
 	@LD_LIBRARY_PATH=. CK_XML_LOG_FILE_NAME=test_results.xml ./bin/openchange-testsuite
@@ -1583,13 +1594,13 @@ $(pythonscriptdir)/openchange/mapi.$(SHLIBEXT):	pyopenchange/pymapi.c				\
 						pyopenchange/pymapi_properties.c		\
 						libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 	@echo "Linking $@"
-	@$(CC) $(CFLAGS) -fno-strict-aliasing $(DSOOPT) $(LDFLAGS) -o $@ $^ $(PYTHON_CFLAGS) $(PYTHON_LIBS) $(LIBS) 
+	@$(CC) $(PYTHON_CFLAGS) $(CFLAGS) -fno-strict-aliasing $(DSOOPT) $(LDFLAGS) -o $@ $^ $(PYTHON_LIBS) $(LIBS)
 
 # $(pythonscriptdir)/openchange/ocpf.$(SHLIBEXT):	pyopenchange/pyocpf.c				\
 # 						libocpf.$(SHLIBEXT).$(PACKAGE_VERSION)		\
 # 						libmapi.$(SHLIBEXT).$(PACKAGE_VERSION)
 # 	@echo "Linking $@"
-# 	@$(CC) $(CFLAGS) $(DSOOPT) $(LDFLAGS) -o $@ $^ $(PYTHON_CFLAGS) $(PYTHON_LIBS) $(LIBS) 
+# 	@$(CC) $(PYTHON_CFLAGS) $(CFLAGS) $(DSOOPT) $(LDFLAGS) -o $@ $^ $(PYTHON_LIBS) $(LIBS)
 
 $(pythonscriptdir)/openchange/mapistore.$(SHLIBEXT): 	pyopenchange/mapistore/pymapistore.c			\
 							pyopenchange/mapistore/mgmt.c				\
