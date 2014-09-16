@@ -1,3 +1,25 @@
+/*
+   MAPI Proxy - OpenchangeDB backend LDB implementation
+
+   OpenChange Project
+
+   Copyright (C) Julien Kerihuel 2009-2014
+   Copyright (C) Jesús García Sáez 2014
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "openchangedb_ldb.h"
 
 #include "mapiproxy/dcesrv_mapiproxy.h"
@@ -110,6 +132,7 @@ static enum MAPISTATUS get_SystemFolderID(struct openchangedb_context *self,
 }
 
 static enum MAPISTATUS get_PublicFolderID(struct openchangedb_context *self,
+					  const char *username,
 					  uint32_t SystemIdx,
 					  uint64_t *FolderId)
 {
@@ -252,6 +275,7 @@ static enum MAPISTATUS get_MailboxReplica(struct openchangedb_context *self,
 }
 
 static enum MAPISTATUS get_PublicFolderReplica(struct openchangedb_context *self,
+					       const char *username,
 					       uint16_t *ReplID,
 					       struct GUID *ReplGUID)
 {
@@ -721,16 +745,6 @@ static struct LongArray_r *decode_mv_long(TALLOC_CTX *mem_ctx, const char *str)
 	return long_array;
 }
 
-/**
-   \details Retrieve a MAPI property from an OpenChange LDB message
-
-   \param mem_ctx pointer to the memory context
-   \param msg pointer to the LDB message
-   \param proptag the MAPI property tag to lookup
-   \param PidTagAttr the mapped MAPI property name
-
-   \return valid data pointer on success, otherwise NULL
- */
 static void *get_property_data_message(TALLOC_CTX *mem_ctx, struct ldb_message *msg,
 				       uint32_t proptag, const char *PidTagAttr)
 {
@@ -765,8 +779,15 @@ static void *get_property_data_message(TALLOC_CTX *mem_ctx, struct ldb_message *
 	case PT_STRING8:
 	case PT_UNICODE:
 		str = ldb_msg_find_attr_as_string(msg, PidTagAttr, NULL);
+		if (!str) return NULL;
+
 		local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
 		val = ldb_binary_decode(local_mem_ctx, str);
+		if (val.length == 0) {
+			talloc_free(local_mem_ctx);
+			return NULL;
+		}
+
 		data = (char *) talloc_strndup(mem_ctx, (char *) val.data, val.length);
 		talloc_free(local_mem_ctx);
 		break;
@@ -829,7 +850,94 @@ static void *get_property_data(TALLOC_CTX *mem_ctx, struct ldb_result *res,
 	return get_property_data_message(mem_ctx, res->msgs[pos], proptag, PidTagAttr);
 }
 
-static enum MAPISTATUS get_new_changeNumber(struct openchangedb_context *self, uint64_t *cn)
+static enum MAPISTATUS get_ReceiveFolderTable(TALLOC_CTX *mem_ctx,
+					      struct openchangedb_context *oc_ctx,
+					      const char *recipient,
+					      uint32_t *cValues,
+					      struct ReceiveFolder **entries)
+{
+	TALLOC_CTX			*tmp_ctx;
+	int				ret;
+	struct ldb_context		*ldb_ctx;
+	struct ldb_result		*res = NULL;
+	struct ldb_message_element	*el;
+	struct ldb_dn			*dn;
+	const char * const		attrs[] = { "*", NULL };
+	char				*dnstr = NULL;
+	struct ReceiveFolder		*rcvfolders;
+	int				i, j;
+	int				idx;
+
+	/* Sanity checks */
+	OPENCHANGE_RETVAL_IF(!oc_ctx, MAPI_E_INVALID_PARAMETER, NULL);
+	OPENCHANGE_RETVAL_IF(!oc_ctx->data, MAPI_E_INVALID_PARAMETER, NULL);
+	OPENCHANGE_RETVAL_IF(!recipient, MAPI_E_INVALID_PARAMETER, NULL);
+	OPENCHANGE_RETVAL_IF(!cValues, MAPI_E_INVALID_PARAMETER, NULL);
+	OPENCHANGE_RETVAL_IF(!entries, MAPI_E_INVALID_PARAMETER, NULL);
+
+	tmp_ctx = talloc_named(NULL, 0, "get_ReceiveFoldertable");
+	OPENCHANGE_RETVAL_IF(!tmp_ctx, MAPI_E_NOT_ENOUGH_MEMORY, NULL);
+
+	ldb_ctx = (struct ldb_context *) oc_ctx->data;
+
+	/* Step 1. Find mailbox DN for the recipient */
+	ret = ldb_search(ldb_ctx, tmp_ctx, &res, ldb_get_default_basedn(ldb_ctx),
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, tmp_ctx);
+
+	dnstr = talloc_strdup(tmp_ctx, ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
+	OPENCHANGE_RETVAL_IF(!dnstr, MAPI_E_NOT_ENOUGH_MEMORY, tmp_ctx);
+	talloc_free(res);
+	dn = ldb_dn_new(tmp_ctx, ldb_ctx, dnstr);
+	talloc_free(dnstr);
+
+	/* Step 2. Search for all MessageClasses within user's mailbox */
+	ret = ldb_search(ldb_ctx, tmp_ctx, &res, dn, LDB_SCOPE_SUBTREE, attrs,
+			 "(PidTagMessageClass=*)");
+	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, tmp_ctx);
+
+	rcvfolders = talloc_array(tmp_ctx, struct ReceiveFolder, res->count + 1);
+	OPENCHANGE_RETVAL_IF(!rcvfolders, MAPI_E_NOT_ENOUGH_MEMORY, tmp_ctx);
+
+	/* Step 3. Export all entries */
+	*cValues = 0;
+	for (i = 0, idx = 0; i < res->count; i++) {
+		el = ldb_msg_find_element(res->msgs[i], "PidTagMessageClass");
+		rcvfolders = talloc_realloc(tmp_ctx, rcvfolders, struct ReceiveFolder, *cValues + el->num_values);
+
+		for (j = 0; j < el->num_values; j++) {
+			struct FILETIME	*ft;
+
+			rcvfolders[idx].flag = 0;
+			rcvfolders[idx].fid = ldb_msg_find_attr_as_uint64(res->msgs[i], "PidTagFolderId", 0x0);
+
+			ft = (struct FILETIME *) get_property_data(tmp_ctx, res, i,
+								   PidTagLastModificationTime,
+								   "PidTagLastModificationTime");
+			rcvfolders[idx].modiftime.dwLowDateTime = ft->dwLowDateTime;
+			rcvfolders[idx].modiftime.dwHighDateTime = ft->dwHighDateTime;
+			talloc_free(ft);
+
+			if (!strncmp("All", (char *)el->values[j].data,
+				     strlen((char *)el->values[j].data))) {
+				rcvfolders[idx].lpszMessageClass = "";
+			} else {
+				rcvfolders[idx].lpszMessageClass = talloc_strdup(rcvfolders,
+										 (char *)el->values[j].data);
+			}
+			*cValues += 1;
+			idx++;
+		}
+	}
+
+	talloc_steal(mem_ctx, rcvfolders);
+	*entries = rcvfolders;
+
+	talloc_free(tmp_ctx);
+	return MAPI_E_SUCCESS;
+}
+
+static enum MAPISTATUS get_new_changeNumber(struct openchangedb_context *self, const char *username, uint64_t *cn)
 {
 	TALLOC_CTX		*mem_ctx;
 	int			ret;
@@ -862,7 +970,9 @@ static enum MAPISTATUS get_new_changeNumber(struct openchangedb_context *self, u
 }
 
 static enum MAPISTATUS get_new_changeNumbers(struct openchangedb_context *self,
-					     TALLOC_CTX *mem_ctx, uint64_t max,
+					     TALLOC_CTX *mem_ctx,
+					     const char *username,
+					     uint64_t max,
 					     struct UI8Array_r **cns_p)
 {
 	TALLOC_CTX		*local_mem_ctx;
@@ -906,7 +1016,7 @@ static enum MAPISTATUS get_new_changeNumbers(struct openchangedb_context *self,
 }
 
 static enum MAPISTATUS get_next_changeNumber(struct openchangedb_context *self,
-					     uint64_t *cn)
+					     const char *username, uint64_t *cn)
 {
 	TALLOC_CTX		*mem_ctx;
 	int			ret;
@@ -1042,7 +1152,7 @@ static enum MAPISTATUS set_folder_properties(struct openchangedb_context *self,
 	msg->elements[msg->num_elements-1].flags = LDB_FLAG_MOD_REPLACE;
 
 	value->ulPropTag = PidTagChangeNumber;
-	get_new_changeNumber(self, (uint64_t *) &value->value.d);
+	get_new_changeNumber(self, username, (uint64_t *) &value->value.d);
 	str_value = openchangedb_set_folder_property_data(mem_ctx, value);
 	ldb_msg_add_string(msg, "PidTagChangeNumber", str_value);
 	msg->elements[msg->num_elements-1].flags = LDB_FLAG_MOD_REPLACE;
@@ -1374,8 +1484,11 @@ static enum MAPISTATUS get_users_from_partial_uri(TALLOC_CTX *parent_ctx,
 }
 
 static enum MAPISTATUS create_mailbox(struct openchangedb_context *self,
-				      const char *username, int systemIdx,
-				      uint64_t fid, const char *display_name)
+				      const char *username,
+				      const char *organization_name,
+				      const char *groupo_name,
+				      int systemIdx, uint64_t fid,
+				      const char *display_name)
 {
 	int			ret;
 	TALLOC_CTX		*mem_ctx;
@@ -1390,7 +1503,7 @@ static enum MAPISTATUS create_mailbox(struct openchangedb_context *self,
 
 	mem_ctx = talloc_named(NULL, 0, "openchangedb_ldb create_mailbox");
 
-	get_new_changeNumber(self, &changeNum);
+	get_new_changeNumber(self, username, &changeNum);
 
 	/* Retrieve distinguesName for parent folder */
 
@@ -1604,9 +1717,9 @@ static bool is_public_folder_id(struct openchangedb_context *self, uint64_t fid)
 	return false;
 }
 
-static const char *get_indexing_url(struct openchangedb_context *self, const char *username)
+static enum MAPISTATUS get_indexing_url(struct openchangedb_context *self, const char *username, const char **indexing_uri)
 {
-	return NULL;
+	return MAPI_E_NOT_IMPLEMENTED;
 }
 
 static bool set_locale(struct openchangedb_context *self, const char *username, uint32_t lcid)
@@ -2279,6 +2392,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_ldb_initialize(TALLOC_CTX *mem_ctx,
 	oc_ctx->set_mapistoreURI = set_mapistoreURI;
 	oc_ctx->get_fid = get_fid;
 	oc_ctx->get_ReceiveFolder = get_ReceiveFolder;
+	oc_ctx->get_ReceiveFolderTable = get_ReceiveFolderTable;
 	oc_ctx->get_TransportFolder = get_TransportFolder;
 	oc_ctx->lookup_folder_property = lookup_folder_property;
 	oc_ctx->set_folder_properties = set_folder_properties;

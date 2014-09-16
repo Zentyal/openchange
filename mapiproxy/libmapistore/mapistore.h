@@ -31,10 +31,6 @@
    users of the store (rather than storage providers).
  */
 
-#ifndef	_GNU_SOURCE
-#define	_GNU_SOURCE
-#endif
-
 #ifndef	_PUBLIC_
 #define	_PUBLIC_
 #endif
@@ -405,7 +401,7 @@ struct namedprops_context;
 
 /* definitions from mapistore_namedprops.c */
 enum mapistore_error mapistore_namedprops_get_mapped_id(struct namedprops_context *, struct MAPINAMEID, uint16_t *);
-uint16_t mapistore_namedprops_next_unused_id(struct namedprops_context *);
+enum mapistore_error mapistore_namedprops_next_unused_id(struct namedprops_context *, uint16_t *);
 enum mapistore_error mapistore_namedprops_create_id(struct namedprops_context *, struct MAPINAMEID, uint16_t);
 enum mapistore_error mapistore_namedprops_get_nameid(struct namedprops_context *, uint16_t, TALLOC_CTX *mem_ctx, struct MAPINAMEID **);
 enum mapistore_error mapistore_namedprops_get_nameid_type(struct namedprops_context *, uint16_t, uint16_t *);
@@ -508,8 +504,8 @@ struct mapistore_context;
 struct mapistore_subscription_list *mapistore_find_matching_subscriptions(struct mapistore_context *, struct mapistore_notification *);
 enum mapistore_error mapistore_delete_subscription(struct mapistore_context *, uint32_t, uint16_t);
 void mapistore_push_notification(struct mapistore_context *, uint8_t, enum mapistore_notification_type, void *);
-enum MAPISTATUS mapistore_get_queued_notifications(struct mapistore_context *, struct mapistore_subscription *, struct mapistore_notification_list **);
-enum MAPISTATUS mapistore_get_queued_notifications_named(struct mapistore_context *, const char *, struct mapistore_notification_list **);
+enum mapistore_error mapistore_get_queued_notifications(struct mapistore_context *, struct mapistore_subscription *, struct mapistore_notification_list **);
+enum mapistore_error mapistore_get_queued_notifications_named(struct mapistore_context *, const char *, struct mapistore_notification_list **);
 
 __END_DECLS
 

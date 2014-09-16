@@ -1,3 +1,24 @@
+/*
+   MySQL util functions
+
+   OpenChange Project
+
+   Copyright (C) Jesús García Sáez 2014
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mysql.h"
 
 #include <time.h>
@@ -108,7 +129,7 @@ MYSQL *create_connection(const char *connection_string, MYSQL **conn)
 	parsed = parse_connection_string(mem_ctx, connection_string,
 					 &host, &user, &passwd, &db);
 	if (!parsed) {
-		DEBUG(0, ("Wrong connection string to MYSQL %s\n", connection_string));
+		DEBUG(0, ("Wrong connection string to mysql %s\n", connection_string));
 		*conn = NULL;
 		goto end;
 	}
@@ -121,7 +142,7 @@ MYSQL *create_connection(const char *connection_string, MYSQL **conn)
 	// Try to create database
 	if (!mysql_real_connect(*conn, host, user, passwd, NULL, 0, NULL, 0)) {
 		// Nop
-		DEBUG(0, ("Can't connect to MYSQL using %s\n", connection_string));
+		DEBUG(0, ("Can't connect to mysql using %s\n", connection_string));
 		*conn = NULL;
 		goto end;
 	} else {
@@ -129,7 +150,7 @@ MYSQL *create_connection(const char *connection_string, MYSQL **conn)
 		// Connect it!, let's try to create database
 		sql = talloc_asprintf(mem_ctx, "CREATE DATABASE %s", db);
 		if (mysql_query(*conn, sql) != 0 || mysql_select_db(*conn, db) != 0) {
-			DEBUG(0, ("Can't connect to MYSQL using %s\n", connection_string));
+			DEBUG(0, ("Can't connect to mysql using %s\n", connection_string));
 			*conn = NULL;
 			goto end;
 		}
@@ -163,7 +184,7 @@ enum MYSQLRESULT execute_query(MYSQL *conn, const char *sql)
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	if (mysql_query(conn, sql) != 0) {
 		printf("Error on query `%s`: %s\n", sql, mysql_error(conn));
-		DEBUG(5, ("Error on query `%s`: %s", sql, mysql_error(conn)));
+		DEBUG(5, ("Error on query `%s`: %s\n", sql, mysql_error(conn)));
 		return MYSQL_ERROR;
 	}
 	clock_gettime(CLOCK_MONOTONIC, &end);
@@ -185,11 +206,13 @@ enum MYSQLRESULT select_without_fetch(MYSQL *conn, const char *sql,
 	enum MYSQLRESULT ret;
 
 	ret = execute_query(conn, sql);
-	OPENCHANGE_RETVAL_IF(ret != MYSQL_SUCCESS, ret, NULL);
+	if (ret != MYSQL_SUCCESS) {
+		return ret;
+	}
 
 	*res = mysql_store_result(conn);
 	if (*res == NULL) {
-		DEBUG(0, ("Error getting results of `%s`: %s", sql,
+		DEBUG(0, ("Error getting results of `%s`: %s\n", sql,
 			  mysql_error(conn)));
 		return MYSQL_ERROR;
 	}
@@ -209,7 +232,7 @@ enum MYSQLRESULT select_all_strings(TALLOC_CTX *mem_ctx, MYSQL *conn,
 {
 	MYSQL_RES *res;
 	struct StringArrayW_r *results;
-	uint32_t i, num_rows;
+	uint32_t i, num_rows = 0;
 	enum MYSQLRESULT ret;
 
 	ret = select_without_fetch(conn, sql, &res);
@@ -241,7 +264,7 @@ enum MYSQLRESULT select_all_strings(TALLOC_CTX *mem_ctx, MYSQL *conn,
 		for (i = 0; i < results->cValues; i++) {
 			MYSQL_ROW row = mysql_fetch_row(res);
 			if (row == NULL) {
-				DEBUG(0, ("Error getting row %d of `%s`: %s", i, sql,
+				DEBUG(0, ("Error getting row %d of `%s`: %s\n", i, sql,
 					  mysql_error(conn)));
 				mysql_free_result(res);
 				return MYSQL_ERROR;
@@ -266,11 +289,13 @@ enum MYSQLRESULT select_first_string(TALLOC_CTX *mem_ctx, MYSQL *conn,
 	enum MYSQLRESULT ret;
 
 	ret = select_without_fetch(conn, sql, &res);
-	OPENCHANGE_RETVAL_IF(ret != MYSQL_SUCCESS, ret, NULL);
+	if (ret != MYSQL_SUCCESS) {
+		return ret;
+	}
 
 	MYSQL_ROW row = mysql_fetch_row(res);
 	if (row == NULL) {
-		DEBUG(0, ("Error getting row of `%s`: %s", sql,
+		DEBUG(0, ("Error getting row of `%s`: %s\n", sql,
 			  mysql_error(conn)));
 		return MYSQL_ERROR;
 	}
@@ -290,7 +315,10 @@ enum MYSQLRESULT select_first_uint(MYSQL *conn, const char *sql,
 	enum MYSQLRESULT ret;
 
 	ret = select_first_string(mem_ctx, conn, sql, &result);
-	OPENCHANGE_RETVAL_IF(ret != MYSQL_SUCCESS, ret, mem_ctx);
+	if (ret != MYSQL_SUCCESS) {
+		talloc_free(mem_ctx);
+		return ret;
+	}
 
 	ret = MYSQL_ERROR;
 	if (convert_string_to_ull(result, n)) {
@@ -317,50 +345,61 @@ bool table_exists(MYSQL *conn, char *table_name)
 }
 
 
-bool create_schema(MYSQL *conn, char *schema_file)
+/**
+   \details Insert a schema file
+
+   \param conn pointer to the MySQL connection
+   \param filename path to the sql file with the schema
+
+   \fixme find a better approach than allocating buffer of the file size
+
+   \return MAPISTORE_SUCCESS on success, otherwise MAPISTORE error
+ */
+enum mapistore_error create_schema(MYSQL *conn, const char *filename)
 {
-	TALLOC_CTX *mem_ctx;
-	FILE *f;
-	int sql_size, bytes_read;
-	char *schema, *query;
-	bool ret, queries_to_execute;
+	TALLOC_CTX		*mem_ctx;
+	enum mapistore_error	retval = MAPISTORE_SUCCESS;
+	struct stat		sb;
+	FILE			*f;
+	int			ret;
+	int			len;
+	char			*query;
 
-	f = fopen(schema_file, "r");
-	if (!f) {
-		DEBUG(0, ("schema file %s not found", schema_file));
-		ret = false;
+	/* Sanity checks */
+	MAPISTORE_RETVAL_IF(!conn, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+	MAPISTORE_RETVAL_IF(!filename, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+
+	mem_ctx = talloc_named(NULL, 0, "create_schema");
+	MAPISTORE_RETVAL_IF(!mem_ctx, MAPISTORE_ERR_NO_MEMORY, NULL);
+
+	ret = stat(filename, &sb);
+	MAPISTORE_RETVAL_IF(ret == -1, MAPISTORE_ERR_BACKEND_INIT, mem_ctx);
+	MAPISTORE_RETVAL_IF(sb.st_size == 0, MAPISTORE_ERR_DATABASE_INIT, mem_ctx);
+
+	query = talloc_zero_array(mem_ctx, char, sb.st_size + 1);
+	MAPISTORE_RETVAL_IF(!query, MAPISTORE_ERR_NO_MEMORY, mem_ctx);
+
+	f = fopen(filename, "r");
+	MAPISTORE_RETVAL_IF(!f, MAPISTORE_ERR_BACKEND_INIT, mem_ctx);
+
+	len = fread(query, sizeof(char), sb.st_size, f);
+	if (len != sb.st_size) {
+		retval = MAPISTORE_ERR_BACKEND_INIT;
+		mapistore_set_errno(MAPISTORE_ERR_BACKEND_INIT);
 		goto end;
 	}
-	fseek(f, 0, SEEK_END);
-	sql_size = ftell(f);
-	rewind(f);
-	mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-	schema = talloc_zero_array(mem_ctx, char, sql_size + 1);
-	bytes_read = fread(schema, sizeof(char), sql_size, f);
-	if (bytes_read != sql_size) {
-		DEBUG(0, ("error reading schema file %s", schema_file));
-		ret = false;
-		goto end;
+
+	ret = mysql_query(conn, query);
+	if (ret) {
+		retval = MAPISTORE_ERR_DATABASE_OPS;
+		mapistore_set_errno(MAPISTORE_ERR_DATABASE_OPS);
 	}
-	// schema is a series of create table/index queries separated by ';'
-	query = strtok (schema, ";");
-	queries_to_execute = query != NULL;
-	while (queries_to_execute) {
-		ret = mysql_query(conn, query) ? false : true;
-		if (!ret) {
-			DEBUG(0, ("Error creating schema: %s\n", mysql_error(conn)));
-			break;
-		}
-		query = strtok(NULL, ";");
-		queries_to_execute = ret && query && strlen(query) > 10;
-	}
+
 end:
-	if (f) {
-		talloc_free(mem_ctx);
-		fclose(f);
-	}
+	talloc_free(mem_ctx);
+	fclose(f);
 
-	return ret;
+	return retval;
 }
 
 

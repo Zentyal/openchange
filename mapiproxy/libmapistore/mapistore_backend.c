@@ -338,7 +338,7 @@ enum mapistore_error mapistore_backend_create_context(TALLOC_CTX *mem_ctx, struc
 	void				*backend_object = NULL;
 	int				i;
 
-	DEBUG(0, ("namespace is %s and backend_uri is '%s'\n", namespace, uri));
+	DEBUG(5, ("namespace is %s and backend_uri is '%s'\n", namespace, uri));
 
 	context = talloc_zero(NULL, struct backend_context);
 
@@ -523,7 +523,11 @@ enum mapistore_error mapistore_backend_get_path(struct backend_context *bctx, TA
 
 	ret = bctx->backend->context.get_path(bctx->backend_object, mem_ctx, fmid, &bpath);
 
-	if (!ret) {
+	if (ret == MAPISTORE_SUCCESS) {
+		if (!bpath) {
+			DEBUG(3, ("%s: Mapistore backend return SUCCESS, but path url is NULL\n", __location__));
+			return MAPISTORE_ERR_INVALID_DATA;
+		}
 		*path = talloc_asprintf(mem_ctx, "%s%s", bctx->backend->backend.namespace, bpath);
 	} else {
 		*path = NULL;

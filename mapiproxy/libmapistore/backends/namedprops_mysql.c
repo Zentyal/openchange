@@ -1,3 +1,24 @@
+/*
+   MAPI Proxy - Named properties backend MySQL implementation
+
+   OpenChange Project
+
+   Copyright (C) Jesús García Sáez 2014
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "namedprops_mysql.h"
 #include "../mapistore.h"
 #include "../mapistore_private.h"
@@ -6,12 +27,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <mysql/mysql.h>
+#include <mysql/mysqld_error.h>
 #include <ldb.h>
 #include <samba_util.h>
-
-
-#define SCHEMA_FILE "named_properties_schema.sql"
-#define TABLE_NAME "named_properties"
 
 
 static enum mapistore_error get_mapped_id(struct namedprops_context *self,
@@ -27,13 +45,13 @@ static enum mapistore_error get_mapped_id(struct namedprops_context *self,
 	if (type == MNID_ID) {
 		uint32_t prop_id = nameid.kind.lid;
 		sql = talloc_asprintf(mem_ctx,
-			"SELECT mappedId FROM "TABLE_NAME" "
+			"SELECT mappedId FROM "NAMEDPROPS_MYSQL_TABLE" "
 			"WHERE `type`=%d AND `oleguid`='%s' AND `propId`=%d",
 			type, guid, prop_id);
 	} else if (type == MNID_STRING) {
 		const char *prop_name = nameid.kind.lpwstr.Name;
 		sql = talloc_asprintf(mem_ctx,
-			"SELECT mappedId FROM "TABLE_NAME" "
+			"SELECT mappedId FROM "NAMEDPROPS_MYSQL_TABLE" "
 			"WHERE `type`=%d AND `oleguid`='%s' AND `propName`='%s'",
 			type, guid, prop_name);
 	} else {
@@ -58,22 +76,60 @@ static enum mapistore_error get_mapped_id(struct namedprops_context *self,
 	return MAPISTORE_SUCCESS;
 }
 
-static uint16_t next_unused_id(struct namedprops_context *self)
+
+/**
+   \details Return the next unused namedprops ID
+
+   \param nprops pointer to the namedprops creontext
+   \param highest_id pointer to the next ID to return
+
+   \return MAPISTORE_SUCCESS on success, otherwise MAPISTORE error
+ */
+static enum mapistore_error next_unused_id(struct namedprops_context *nprops,
+					   uint16_t *highest_id)
 {
-	uint16_t highest_id = 0;
-	MYSQL *conn = self->data;
+	TALLOC_CTX	*mem_ctx;
+	MYSQL		*conn;
+	MYSQL_RES	*res;
+	MYSQL_ROW	row;
+	char		*sql_query;
+	int		ret;
 
-	const char *sql = "SELECT max(mappedId) FROM " TABLE_NAME;
+	/* Sanity checks */
+	MAPISTORE_RETVAL_IF(!nprops, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+	MAPISTORE_RETVAL_IF(!highest_id, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
 
-	if (mysql_query(conn, sql) == 0) {
-		MYSQL_RES *res = mysql_store_result(conn);
-		MYSQL_ROW row = mysql_fetch_row(res);
-		highest_id = strtol(row[0], NULL, 10);
+	conn = (MYSQL *) nprops->data;
+	MAPISTORE_RETVAL_IF(!conn, MAPISTORE_ERR_DATABASE_OPS, NULL);
+
+	mem_ctx = talloc_named(NULL, 0, "next_unused_id");
+	MAPISTORE_RETVAL_IF(!mem_ctx, MAPISTORE_ERR_NO_MEMORY, NULL);
+
+	sql_query = talloc_asprintf(mem_ctx, "SELECT max(mappedId) FROM %s", NAMEDPROPS_MYSQL_TABLE);
+	MAPISTORE_RETVAL_IF(!sql_query, MAPISTORE_ERR_NO_MEMORY, mem_ctx);
+
+	ret = mysql_query(conn, sql_query);
+	talloc_free(sql_query);
+	MAPISTORE_RETVAL_IF(ret, MAPISTORE_ERR_DATABASE_OPS, mem_ctx);
+
+	res = mysql_store_result(conn);
+	MAPISTORE_RETVAL_IF(!res, MAPISTORE_ERR_DATABASE_OPS, mem_ctx);
+
+	row = mysql_fetch_row(res);
+	if (!row) {
 		mysql_free_result(res);
+		mapistore_set_errno(MAPISTORE_ERR_DATABASE_OPS);
+		talloc_free(mem_ctx);
+		return MAPISTORE_ERR_DATABASE_OPS;
 	}
 
-	return highest_id + 1;
+	*highest_id = strtol(row[0], NULL, 10);
+	mysql_free_result(res);
+
+	*highest_id = *highest_id + 1;
+	return MAPISTORE_SUCCESS;
 }
+
 
 static enum mapistore_error create_id(struct namedprops_context *self,
 				      struct MAPINAMEID nameid,
@@ -105,7 +161,7 @@ static enum mapistore_error create_id(struct namedprops_context *self,
 
 	char *fields_sql = str_list_join(mem_ctx, fields, ',');
 	char *sql = talloc_asprintf(mem_ctx,
-		"INSERT INTO " TABLE_NAME " SET %s", fields_sql);
+		"INSERT INTO " NAMEDPROPS_MYSQL_TABLE " SET %s", fields_sql);
 	DEBUG(5, ("Inserting record:\n%s\n", sql));
 	MYSQL *conn = self->data;
 	if (mysql_query(conn, sql) != 0) {
@@ -124,7 +180,7 @@ static enum mapistore_error get_nameid(struct namedprops_context *self,
 	TALLOC_CTX *local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
 	MYSQL *conn = self->data;
 	const char *sql = talloc_asprintf(local_mem_ctx,
-		"SELECT type, oleguid, propName, propId FROM "TABLE_NAME" "
+		"SELECT type, oleguid, propName, propId FROM "NAMEDPROPS_MYSQL_TABLE" "
 		"WHERE mappedId=%d", mapped_id);
 	if (mysql_query(conn, sql) != 0) {
 		MAPISTORE_RETVAL_IF(true, MAPISTORE_ERR_DATABASE_OPS,
@@ -172,7 +228,7 @@ static enum mapistore_error get_nameid_type(struct namedprops_context *self,
 	MYSQL *conn = self->data;
 	const char *sql = talloc_asprintf(mem_ctx,
 		//FIXME mappedId or propId? mappedId is not unique
-		"SELECT propType FROM "TABLE_NAME" WHERE mappedId=%d",
+		"SELECT propType FROM "NAMEDPROPS_MYSQL_TABLE" WHERE mappedId=%d",
 		mapped_id);
 	if (mysql_query(conn, sql) != 0) {
 		MAPISTORE_RETVAL_IF(true, MAPISTORE_ERR_DATABASE_OPS, mem_ctx);
@@ -208,38 +264,91 @@ static enum mapistore_error transaction_commit(struct namedprops_context *self)
 
 static int mapistore_namedprops_mysql_destructor(struct namedprops_context *self)
 {
-	MYSQL *conn = self->data;
-	release_connection(conn);
+	if (self && self->data) {
+		MYSQL *conn = self->data;
+		DEBUG(5, ("[%s:%d] Destroying namedprops context\n",
+			  __FUNCTION__, __LINE__));
+		release_connection(conn);
+	}
 	return 0;
 }
 
+
+/**
+   \details Retrieve MySQL backend parametric options from
+   configuration file and store them into a data structure.
+
+   \param lp_ctx Pointer to the loadparm context
+   \param p pointer to the structure with individual
+   parameters to return
+
+   \return MAPISTORE_SUCCES on success, otherwise MAPISTORE error
+ */
+enum mapistore_error mapistore_namedprops_mysql_parameters(struct loadparm_context *lp_ctx,
+							   struct namedprops_mysql_params *p)
+{
+	/* Sanity checks */
+	MAPISTORE_RETVAL_IF(!lp_ctx, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+	MAPISTORE_RETVAL_IF(!p, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+
+	/* Retrieve parametric options */
+	p->data = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_data");
+	p->sock = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_sock");
+	p->user = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_user");
+	p->pass = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_pass");
+	p->host = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_host");
+	p->port = lpcfg_parm_int(lp_ctx, NULL, "namedproperties", "mysql_port", 3306);
+	p->db = lpcfg_parm_string(lp_ctx, NULL, "namedproperties", "mysql_db");
+
+	/* Enforce the logic */
+	MAPISTORE_RETVAL_IF(!p->user, MAPISTORE_ERR_BACKEND_INIT, NULL);
+	MAPISTORE_RETVAL_IF(!p->db, MAPISTORE_ERR_BACKEND_INIT, NULL);
+	MAPISTORE_RETVAL_IF(!p->host && !p->sock, MAPISTORE_ERR_BACKEND_INIT, NULL);
+
+	return MAPISTORE_SUCCESS;
+}
+
+
+/**
+   \details Check if the named properties schema is created
+
+   \param conn pointer to the MySQL connection
+
+   \return true if the schema is created, otherwise false;
+ */
 static bool is_schema_created(MYSQL *conn)
 {
-	return table_exists(conn, TABLE_NAME);
+	return table_exists(conn, NAMEDPROPS_MYSQL_TABLE);
 }
 
-static bool create_namedprops_schema(MYSQL *conn)
-{
-	TALLOC_CTX *mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-	char *filename = talloc_asprintf(mem_ctx, "%s/" SCHEMA_FILE,
-					 mapistore_namedprops_get_ldif_path());
-	bool ret = create_schema(conn, filename);
-	talloc_free(mem_ctx);
-	return ret;
-}
+/**
+   \details Check if the database is empty
 
+   \param conn pointer to the MySQL connection
+
+   \return true if the database is empty, otherwise false
+ */
 static bool is_database_empty(MYSQL *conn)
 {
-	if (mysql_query(conn, "SELECT count(*) FROM " TABLE_NAME)) {
-		// Query failed, table doesn't exist?
+	TALLOC_CTX		*mem_ctx = NULL;
+	uint64_t		n = 0;
+	char			*query = NULL;
+	enum MYSQLRESULT	ret;
+
+	mem_ctx = talloc_named(NULL, 0, "is_database_empty");
+	if (mem_ctx == NULL) return true;
+
+	query = talloc_asprintf(mem_ctx, "SELECT count(*) FROM "NAMEDPROPS_MYSQL_TABLE);
+	if (query == NULL) return true;
+
+	ret = select_first_uint(conn, query, &n);
+	talloc_free(mem_ctx);
+	if (ret != MYSQL_SUCCESS) {
+		/* query failed, table does not exist? */
 		return true;
-	} else {
-		MYSQL_RES *res = mysql_store_result(conn);
-		MYSQL_ROW row = mysql_fetch_row(res);
-		int n = atoi(row[0]);
-		mysql_free_result(res);
-		return n == 0;
 	}
+	if (n > 0) return false;
+	return true;
 }
 
 static bool add_field_from_ldif(TALLOC_CTX *mem_ctx, struct ldb_message *ldif,
@@ -336,56 +445,138 @@ static bool insert_ldif_msg(MYSQL *conn, struct ldb_message *ldif)
 	// Done, we have all fields on fields array
 	char *fields_sql = str_list_join(mem_ctx, fields, ',');
 	char *sql = talloc_asprintf(mem_ctx,
-			"INSERT INTO " TABLE_NAME " SET %s", fields_sql);
+			"INSERT INTO " NAMEDPROPS_MYSQL_TABLE " SET %s", fields_sql);
 	mysql_query(conn, sql);
 	talloc_free(mem_ctx);
 	return true;
 }
 
-static enum mapistore_error initialize_database(MYSQL *conn)
+/**
+  \details Initialize the database and provision it
+
+  \param conn pointer to the MySQL context
+  \param schema_path pointer to the path holding schema files
+
+  \return MAPISTORE_SUCCESS on success, otherwise MAPISTORE error
+ */
+static enum mapistore_error initialize_database(MYSQL *conn, const char *schema_path)
 {
-	if (!create_namedprops_schema(conn)) {
-		return MAPISTORE_ERR_DATABASE_OPS;
-	}
-	TALLOC_CTX *mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-	struct ldb_context *ldb_ctx = ldb_init(mem_ctx, NULL);
+	TALLOC_CTX		*mem_ctx;
+	enum mapistore_error	retval = MAPISTORE_SUCCESS;
+	struct ldb_context	*ldb_ctx;
+	struct ldb_ldif		*ldif;
+	struct ldb_message	*msg;
+	int			ret;
+	char			*filename;
+	FILE			*f;
+	bool			inserted;
+
+	/* Sanity checks */
+	MAPISTORE_RETVAL_IF(!conn, MAPISTORE_ERR_DATABASE_INIT, NULL);
+
+	mem_ctx = talloc_named(NULL, 0, "initialize_database");
+	MAPISTORE_RETVAL_IF(!mem_ctx, MAPISTORE_ERR_NO_MEMORY, NULL);
+
+	filename = talloc_asprintf(mem_ctx, "%s/" NAMEDPROPS_MYSQL_SCHEMA,
+				   schema_path ? schema_path : mapistore_namedprops_get_ldif_path());
+	retval = create_schema(conn, filename);
+	MAPISTORE_RETVAL_IF(retval, retval, NULL);
+
+	ldb_ctx = ldb_init(mem_ctx, NULL);
 	MAPISTORE_RETVAL_IF(!ldb_ctx, MAPISTORE_ERR_BACKEND_INIT, mem_ctx);
 
-	char *filename = talloc_asprintf(mem_ctx, "%s/mapistore_namedprops.ldif",
-					 mapistore_namedprops_get_ldif_path());
-	FILE *f = fopen(filename, "r");
-	MAPISTORE_RETVAL_IF(!f, MAPISTORE_ERROR, mem_ctx);
+	filename = talloc_asprintf(mem_ctx, "%s/mapistore_namedprops.ldif",
+				   schema_path ? schema_path : mapistore_namedprops_get_ldif_path());
+	MAPISTORE_RETVAL_IF(!filename, MAPISTORE_ERR_NO_MEMORY, mem_ctx);
 
-	struct ldb_ldif *ldif;
+	f = fopen(filename, "r");
+	talloc_free(filename);
+	MAPISTORE_RETVAL_IF(!f, MAPISTORE_ERR_BACKEND_INIT, mem_ctx);
+	
 	while ((ldif = ldb_ldif_read_file(ldb_ctx, f))) {
-		struct ldb_message *normalized_msg;
-		int ret = ldb_msg_normalize(ldb_ctx, mem_ctx, ldif->msg,
-					    &normalized_msg);
-		MAPISTORE_RETVAL_IF(ret, MAPISTORE_ERR_DATABASE_INIT, mem_ctx);
-		bool inserted = insert_ldif_msg(conn, normalized_msg);
+		ret = ldb_msg_normalize(ldb_ctx, mem_ctx, ldif->msg, &msg);
+		if (ret) {
+			retval = MAPISTORE_ERR_DATABASE_INIT;
+			mapistore_set_errno(MAPISTORE_ERR_DATABASE_INIT);
+			goto end;
+		}
+
+		inserted = insert_ldif_msg(conn, msg);
 		ldb_ldif_read_free(ldb_ctx, ldif);
 		if (!inserted) {
-			fclose(f);
-			MAPISTORE_RETVAL_IF(true, MAPISTORE_ERR_DATABASE_OPS,
-					    mem_ctx);
+			retval = MAPISTORE_ERR_DATABASE_OPS;
+			mapistore_set_errno(MAPISTORE_ERR_DATABASE_OPS);
+			goto end;
 		}
 	}
 
+end:
 	talloc_free(mem_ctx);
 	fclose(f);
 
-	return MAPISTORE_SUCCESS;
+	return retval;
 }
 
-
-enum mapistore_error mapistore_namedprops_mysql_init(TALLOC_CTX *mem_ctx,
-						     const char *connection_string,
-						     struct namedprops_context **ctx)
+static char *connection_string_from_parameters(TALLOC_CTX *mem_ctx,
+					       struct namedprops_mysql_params *parms)
 {
-	// 0) Create context
-	struct namedprops_context *nprops = talloc_zero(mem_ctx, struct namedprops_context);
+	return talloc_asprintf(mem_ctx, "mysql://%s:%s@%s:%d/%s",
+			       parms->user, parms->pass, parms->host,
+			       parms->port, parms->db);
+}
 
-	nprops->backend_type = talloc_strdup(mem_ctx, "mysql");
+/**
+   \details Initialize mapistore named properties MySQL backend
+
+   \param mem_ctx pointer to the memory context
+   \param lp_ctx pointer to the loadparm context
+   \param nprops_ctx pointer on pointer to the namedprops context to
+   return
+
+   \return MAPISTORE_SUCCESS on success, otherwise MAPISTORE error
+ */
+enum mapistore_error mapistore_namedprops_mysql_init(TALLOC_CTX *mem_ctx,
+						     struct loadparm_context *lp_ctx,
+						     struct namedprops_context **nprops_ctx)
+{
+	enum mapistore_error		retval;
+	struct namedprops_context	*nprops = NULL;
+	struct namedprops_mysql_params	parms;
+	MYSQL				*conn = NULL;
+
+	/* Sanity checks */
+	MAPISTORE_RETVAL_IF(!lp_ctx, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+	MAPISTORE_RETVAL_IF(!nprops_ctx, MAPISTORE_ERR_INVALID_PARAMETER, NULL);
+
+	/* Retrieve smb.conf arguments */
+	retval = mapistore_namedprops_mysql_parameters(lp_ctx, &parms);
+	if (retval) {
+		DEBUG(0, ("[%s:%d] ERROR: parsing MySQL named properties "
+			  "parametric option failed with %s\n",
+			  __FUNCTION__, __LINE__, mapistore_errstr(retval)));
+	}
+	MAPISTORE_RETVAL_IF(retval, retval, NULL);
+
+	/* Establish MySQL connection */
+	if (parms.sock) {
+		// FIXME
+		DEBUG(5, ("Not implemented connect through unix socket to mysql"));
+	} else {
+		create_connection(connection_string_from_parameters(mem_ctx, &parms), &conn);
+	}
+	MAPISTORE_RETVAL_IF(!conn, MAPISTORE_ERR_NOT_INITIALIZED, NULL);
+
+	/* Initialize the database */
+	if (!is_schema_created(conn) || is_database_empty(conn)) {
+		retval = initialize_database(conn, parms.data);
+		MAPISTORE_RETVAL_IF(retval != MAPISTORE_SUCCESS, retval, NULL);
+	}
+
+	/* Create context */
+	nprops = talloc_zero(mem_ctx, struct namedprops_context);
+	MAPISTORE_RETVAL_IF(!nprops, MAPISTORE_ERR_NO_MEMORY, NULL);
+
+	nprops->backend_type = NAMEDPROPS_BACKEND_MYSQL;
 
 	nprops->create_id = create_id;
 	nprops->get_mapped_id = get_mapped_id;
@@ -395,22 +586,10 @@ enum mapistore_error mapistore_namedprops_mysql_init(TALLOC_CTX *mem_ctx,
 	nprops->transaction_commit = transaction_commit;
 	nprops->transaction_start = transaction_start;
 
-	// 1) Establish mysql connection
-	MYSQL *conn;
-	create_connection(connection_string, &conn);
 	nprops->data = conn;
-	OPENCHANGE_RETVAL_IF(!nprops->data, MAPI_E_NOT_INITIALIZED, nprops);
 	talloc_set_destructor(nprops, mapistore_namedprops_mysql_destructor);
 
-	// 2) Initialize database
-	bool should_initialize_database = (!is_schema_created(conn) ||
-					    is_database_empty(conn));
-	if (should_initialize_database) {
-		enum mapistore_error ret = initialize_database(conn);
-		MAPISTORE_RETVAL_IF(ret != MAPISTORE_SUCCESS, ret, NULL);
-	}
-
-	*ctx = nprops;
+	*nprops_ctx = nprops;
 
 	return MAPISTORE_SUCCESS;
 }

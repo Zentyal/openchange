@@ -65,26 +65,61 @@ static const char **get_folders_names(TALLOC_CTX *mem_ctx, struct emsmdbp_contex
 	return ret;
 }
 
+static enum MAPISTATUS get_new_public_folder_id(struct emsmdbp_context *emsmdbp_ctx, uint64_t parent_fid, uint64_t *fid)
+{
+	enum MAPISTATUS		retval = MAPI_E_SUCCESS;
+	enum mapistore_error	ret;
+
+	if (openchangedb_is_public_folder_id(emsmdbp_ctx->oc_ctx, parent_fid)) {
+		retval = openchangedb_get_new_public_folderID(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, fid);
+	} else {
+		ret = mapistore_indexing_get_new_folderID(emsmdbp_ctx->mstore_ctx, fid);
+		if (ret != MAPISTORE_SUCCESS) {
+			retval = MAPI_E_CALL_FAILED;
+		}
+	}
+
+	return retval;
+}
+/**
+   \details Provision the Local FreeBusy message for the user in
+   Public Folder store.
+
+   \param emsmdbp_ctx pointer to the emsmdbp context
+   \param EssDN pointer to enterprise distinguished name (X500 DN)
+
+   \return MAPI_E_SUCCESS on success, otherwise MAPI error
+ */
 _PUBLIC_ enum MAPISTATUS emsmdbp_mailbox_provision_public_freebusy(struct emsmdbp_context *emsmdbp_ctx, const char *EssDN)
 {
-	enum MAPISTATUS		ret;
-	char			*dn_root, *dn_user, *cn_ptr;
-	uint64_t		public_fb_fid, group_fid, fb_mid, change_num;
+	TALLOC_CTX		*mem_ctx;
+	enum MAPISTATUS		retval = MAPI_E_SUCCESS;
+	char			*dn_root = NULL;
+	char			*dn_user = NULL;
+	char			*cn_ptr = NULL;
+	uint64_t		public_fb_fid;
+	uint64_t		group_fid;
+	uint64_t		fb_mid;
+	uint64_t		change_num;
 	size_t			i, max;
 	void			*message_object;
 	struct SRow		property_row;
-	TALLOC_CTX		*mem_ctx;
+
+	/* Sanity checks */
+	OPENCHANGE_RETVAL_IF(!emsmdbp_ctx, MAPI_E_INVALID_PARAMETER, NULL);
+	OPENCHANGE_RETVAL_IF(!EssDN, MAPI_E_INVALID_PARAMETER, NULL);
 
 	mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	OPENCHANGE_RETVAL_IF(!mem_ctx, MAPI_E_NOT_ENOUGH_MEMORY, NULL);
 
 	dn_root = talloc_asprintf(mem_ctx, "EX:%s", EssDN);
+	OPENCHANGE_RETVAL_IF(!dn_root, MAPI_E_NOT_ENOUGH_MEMORY, mem_ctx);
+
 	cn_ptr = strstr(dn_root, "/cn");
-	if (!cn_ptr) {
-		ret = MAPI_E_INVALID_PARAMETER;
-		goto end;
-	}
+	OPENCHANGE_RETVAL_IF(!cn_ptr, MAPI_E_INVALID_PARAMETER, mem_ctx);
 
 	dn_user = talloc_asprintf(mem_ctx, "USER-%s", cn_ptr);
+	OPENCHANGE_RETVAL_IF(!dn_user, MAPI_E_NOT_ENOUGH_MEMORY, mem_ctx);
 	*cn_ptr = 0;
 
 	/* convert dn_root to lowercase */
@@ -99,38 +134,69 @@ _PUBLIC_ enum MAPISTATUS emsmdbp_mailbox_provision_public_freebusy(struct emsmdb
 		dn_user[i] = toupper(dn_user[i]);
 	}
 
-	ret = openchangedb_get_PublicFolderID(emsmdbp_ctx->oc_ctx, EMSMDBP_PF_FREEBUSY, &public_fb_fid);
-	if (ret != MAPI_E_SUCCESS) {
-		DEBUG(5, ("provisioning: freebusy root folder not found in openchange.ldb\n"));
+	retval = openchangedb_get_PublicFolderID(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, EMSMDBP_PF_FREEBUSY, &public_fb_fid);
+	if (retval != MAPI_E_SUCCESS) {
+		DEBUG(5, ("[%s:%d] provisioning: freebusy root folder not found in openchange.ldb\n", __FUNCTION__, __LINE__));
 		goto end;
 	}
 
-	ret = openchangedb_get_fid_by_name(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, public_fb_fid, dn_root, &group_fid);
-	if (ret != MAPI_E_SUCCESS) {
-		openchangedb_get_new_public_folderID(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, &group_fid);
-		openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &change_num);
+	retval = openchangedb_get_fid_by_name(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, public_fb_fid, dn_root, &group_fid);
+	if (retval != MAPI_E_SUCCESS) {
+		retval = get_new_public_folder_id(emsmdbp_ctx, public_fb_fid, &group_fid);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot get new public folder id\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
+		retval = openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, &change_num);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot get new change number\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
 		openchangedb_create_folder(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, public_fb_fid, group_fid, change_num, NULL, -1);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot create new folder\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
 	}
 
-	ret = openchangedb_get_mid_by_subject(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, group_fid, dn_user, false, &fb_mid);
-	if (ret != MAPI_E_SUCCESS) {
-		openchangedb_get_new_public_folderID(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, &fb_mid);
-		openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &change_num);
-		openchangedb_message_create(mem_ctx, emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, fb_mid, group_fid, false, &message_object);
+	retval = openchangedb_get_mid_by_subject(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, group_fid, dn_user, false, &fb_mid);
+	if (retval != MAPI_E_SUCCESS) {
+		retval = get_new_public_folder_id(emsmdbp_ctx, group_fid, &fb_mid);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot get new public folder id\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
+		retval = openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, &change_num);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot get new change number\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
+		retval = openchangedb_message_create(mem_ctx, emsmdbp_ctx->oc_ctx, emsmdbp_ctx->username, fb_mid, group_fid, false, &message_object);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot create new message\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
 		property_row.cValues = 1;
 		property_row.lpProps = talloc_zero(mem_ctx, struct SPropValue);
+		OPENCHANGE_RETVAL_IF(!property_row.lpProps, MAPI_E_NOT_ENOUGH_MEMORY, mem_ctx);
 		property_row.lpProps[0].ulPropTag = PR_NORMALIZED_SUBJECT_UNICODE;
 		property_row.lpProps[0].value.lpszW = dn_user;
-		openchangedb_message_set_properties(mem_ctx, emsmdbp_ctx->oc_ctx, message_object, &property_row);
-		openchangedb_message_save(emsmdbp_ctx->oc_ctx, message_object, 0);
+		retval = openchangedb_message_set_properties(mem_ctx, emsmdbp_ctx->oc_ctx, message_object, &property_row);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot set properties on new message\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
+		retval = openchangedb_message_save(emsmdbp_ctx->oc_ctx, message_object, 0);
+		if (retval != MAPI_E_SUCCESS) {
+			DEBUG(0, ("[%s:%d] Cannot save message\n", __FUNCTION__, __LINE__));
+			goto end;
+		}
 	}
-
-	ret = MAPI_E_SUCCESS;
 
 end:
 	talloc_free(mem_ctx);
 
-	return ret;
+	return retval;
 }
 
 _PUBLIC_ enum MAPISTATUS emsmdbp_mailbox_provision(struct emsmdbp_context *emsmdbp_ctx, const char *username)
@@ -242,10 +308,9 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 	struct Binary_r				*entryId;
 	bool					exists, reminders_created;
 	void					*backend_object, *backend_table, *backend_message;
+	char	 				*organization_name, *group_name;
 
 	mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-
-	openchangedb_transaction_start(emsmdbp_ctx->oc_ctx);
 
 	/* Retrieve list of folders from backends */
 	retval = mapistore_list_contexts_for_user(emsmdbp_ctx->mstore_ctx, username, mem_ctx, &contexts_list);
@@ -265,11 +330,14 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 			/* DEBUG(5, ("received entry: '%s' (%p)\n", current_entry->url, current_entry)); */
 		}
 		else {
-			DEBUG(5, ("received entry without uri\n"));
-			abort();
+			DEBUG(3, ("[%s:%d] received entry without uri\n", __FUNCTION__, __LINE__));
+			talloc_free(mem_ctx);
+			return MAPI_E_CALL_FAILED;
 		}
 		current_entry = current_entry->next;
 	}
+
+	openchangedb_transaction_start(emsmdbp_ctx->oc_ctx);
 
 	/* Retrieve list of existing entries */
 	ret = openchangedb_get_MAPIStoreURIs(emsmdbp_ctx->oc_ctx, username, mem_ctx, &existing_uris);
@@ -279,7 +347,10 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 			exists = false;
 			mapistore_url = existing_uris->lppszW[i];
 			if (mapistore_url[strlen(mapistore_url)-1] != '/') {
-				abort();
+				DEBUG(3, ("[%s:%d] Bad formed URI returned, this should never happen\n", __FUNCTION__, __LINE__));
+				openchangedb_transaction_commit(emsmdbp_ctx->oc_ctx);
+				talloc_free(mem_ctx);
+				return MAPI_E_BAD_VALUE;
 			}
 			current_entry = contexts_list;
 			while (!exists && current_entry) {
@@ -335,7 +406,9 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 
 	/* Fallback role MUST exist */
 	if (!main_entries[MAPISTORE_FALLBACK_ROLE]) {
-		DEBUG(5, ("No fallback provisioning role was found while such role is mandatory. Provisiong must be done manually.\n"));
+		DEBUG(5, ("[%s:%d] No fallback provisioning role was found while such role is mandatory. "
+			  "Provisioning must be done manually.\n", __FUNCTION__, __LINE__));
+		openchangedb_transaction_commit(emsmdbp_ctx->oc_ctx);
 		talloc_free(mem_ctx);
 		return MAPI_E_DISK_ERROR;
 	}
@@ -354,7 +427,13 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		// value set here. After that outlook won't update that value, no matter
 		// how many times /resetfoldernames is executed again.
 		current_name = talloc_asprintf(mem_ctx, MAILBOX_ROOT_NAME, username);
-		openchangedb_create_mailbox(emsmdbp_ctx->oc_ctx, username, EMSMDBP_MAILBOX_ROOT, mailbox_fid, current_name);
+
+		ret = emsmdbp_fetch_organizational_units(mem_ctx, emsmdbp_ctx, &organization_name, &group_name);
+		if (ret != MAPI_E_SUCCESS) {
+			DEBUG(0, ("Error provisioning mailbox, we couldn't fetch organizational unit of the user %s", username));
+			return MAPI_E_NOT_FOUND;
+		}
+		openchangedb_create_mailbox(emsmdbp_ctx->oc_ctx, username, organization_name, group_name, mailbox_fid, current_name);
 		openchangedb_set_locale(emsmdbp_ctx->oc_ctx, username, emsmdbp_ctx->userLanguage);
 	}
 
@@ -366,7 +445,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		ret = openchangedb_get_SystemFolderID(emsmdbp_ctx->oc_ctx, username, i, &current_fid);
 		if (ret != MAPI_E_SUCCESS) {
 			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 			mapistore_url = talloc_asprintf(mem_ctx, "%s0x%"PRIx64"/", fallback_url, current_fid);
 			openchangedb_create_folder(emsmdbp_ctx->oc_ctx, username, mailbox_fid, current_fid, current_cn, mapistore_url, i);
 			property_row.lpProps[0].value.lpszW = folder_names[i];
@@ -389,7 +468,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		ret = openchangedb_get_SystemFolderID(emsmdbp_ctx->oc_ctx, username, i, &current_fid);
 		if (ret != MAPI_E_SUCCESS) {
 			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 			openchangedb_create_folder(emsmdbp_ctx->oc_ctx, username, mailbox_fid, current_fid, current_cn, NULL, i);
 			property_row.lpProps[0].value.lpszW = folder_names[i];
 			property_row.lpProps[1].value.lpszW = search_container_classes[j];
@@ -405,7 +484,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 	ret = openchangedb_get_SystemFolderID(emsmdbp_ctx->oc_ctx, username, EMSMDBP_TOP_INFORMATION_STORE, &ipm_fid);
 	if (ret != MAPI_E_SUCCESS) {
 		mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &ipm_fid);
-		openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+		openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 		property_row.cValues = 2;
 		property_row.lpProps[1].ulPropTag = PR_SUBFOLDERS;
 		property_row.lpProps[0].value.lpszW = folder_names[EMSMDBP_TOP_INFORMATION_STORE];
@@ -426,7 +505,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 			}
 		} else {
 			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 			current_name = folder_names[i];
 
 			switch (i) {
@@ -500,7 +579,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 			property_row.lpProps[0].ulPropTag = PR_DISPLAY_NAME_UNICODE;
 
 			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 
 			current_name = current_folder->name;
 			current_entry = main_entries[current_folder->role];
@@ -583,7 +662,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 			if (openchangedb_get_fid(emsmdbp_ctx->oc_ctx, mapistore_url, &found_fid) != MAPI_E_SUCCESS) {
 				/* DEBUG(5, ("creating secondary entry '%s'\n", current_entry->url)); */
 				mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-				openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+				openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 
 				current_name = current_entry->name;
 				/* Ensure the name is unique */
@@ -621,7 +700,7 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		if (ret == MAPI_E_NOT_FOUND) {
 			/* create the folder */
 			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_fid);
-			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, &current_cn);
+			openchangedb_get_new_changeNumber(emsmdbp_ctx->oc_ctx, username, &current_cn);
 
 			property_row.cValues = 3;
 			property_row.lpProps[0].ulPropTag = PidTagDisplayName;
@@ -658,9 +737,12 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		mapistore_table_get_row_count(emsmdbp_ctx->mstore_ctx, context_id, backend_table, MAPISTORE_PREFILTERED_QUERY, &row_count);
 		if (row_count == 0) {
 			/* create the message */
-			mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_mid);
-			if (mapistore_folder_create_message(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, current_mid, false, &backend_message) != MAPISTORE_SUCCESS) {
-				abort();
+			retval = mapistore_indexing_get_new_folderID_as_user(emsmdbp_ctx->mstore_ctx, username, &current_mid);
+			if (retval != MAPISTORE_SUCCESS) goto error;
+			retval = mapistore_folder_create_message(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, current_mid, false, &backend_message);
+			if (retval != MAPISTORE_SUCCESS) {
+				DEBUG(3, ("[%s:%d] Error creating a message in mapistore %d", __FUNCTION__, __LINE__, retval));
+				goto error;
 			}
 
 			property_row.cValues = 3;
@@ -710,4 +792,9 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 	talloc_free(mem_ctx);
 
 	return MAPI_E_SUCCESS;
+
+error:
+	openchangedb_transaction_commit(emsmdbp_ctx->oc_ctx);
+	talloc_free(mem_ctx);
+	return MAPI_E_CALL_FAILED;
 }

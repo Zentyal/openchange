@@ -200,16 +200,20 @@ def provision_schema(setup_path, names, lp, creds, reporter, ldif, msg, modify_m
             ldif_function = setup_modify_ldif
         else:
             ldif_function = setup_add_ldif
-        ldif_function(db, setup_path(ldif), {"FIRSTORG": names.firstorg,
-                                             "FIRSTORGDN": names.firstorgdn,
-                                             "FIRSTOU": names.firstou,
-                                             "CONFIGDN": names.configdn,
-                                             "SCHEMADN": names.schemadn,
-                                             "DOMAINDN": names.domaindn,
-                                             "DOMAIN": names.domain,
-                                             "DNSDOMAIN": names.dnsdomain,
-                                             "NETBIOSNAME": names.netbiosname,
-                                             "HOSTNAME": names.hostname})
+        ldif_params = {
+            "FIRSTORG": names.firstorg,
+            "FIRSTORGDN": names.firstorgdn,
+            "FIRSTOU": names.firstou,
+            "CONFIGDN": names.configdn,
+            "SCHEMADN": names.schemadn,
+            "DOMAINDN": names.domaindn,
+            "DOMAIN": names.domain,
+            "DNSDOMAIN": names.dnsdomain,
+            "NETBIOSNAME": names.netbiosname,
+            "HOSTNAME": names.hostname
+        }
+        ldif_function(db, setup_path(ldif), ldif_params)
+        setup_modify_ldif(db, setup_path("AD/oc_provision_schema_update.ldif"), ldif_params)
     except:
         db.transaction_cancel()
         raise
@@ -369,6 +373,7 @@ def install_schemas(setup_path, names, lp, creds, reporter):
 
             # We don't actually add this ldif, just parse it
             prefixmap_ldif = "dn: %s\nprefixMap:: %s\n\n" % (schemadn, prefixmap_data)
+            prefixmap_ldif += "dn:\nchangetype: modify\nreplace: schemaupdatenow\nschemaupdatenow: 1\n\n"
             dsdb._dsdb_set_schema_from_ldif(samdb, prefixmap_ldif, schema_ldif, schemadn)
     except RuntimeError as err:
         print ("[!] error while provisioning the prefixMap: %s"
@@ -395,11 +400,31 @@ def install_schemas(setup_path, names, lp, creds, reporter):
 
     try:
         provision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_configuration.ldif", "Generic Exchange configuration objects")
-        modify_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_configuration_finalize.ldif", "Finalize generic Exchange configuration objects")
-        print "[SUCCESS] Done!"
     except LdbError, ldb_error:
         print ("[!] error while provisioning the Exchange configuration"
                " objects (%d): %s" % ldb_error.args)
+
+
+def provision_organization(setup_path, names, lp, creds, reporter=None):
+    """Create exchange organization
+
+    :param setup_path: Path to the setup directory
+    :param lp: Loadparm context
+    :param creds: Credentials context
+    :param names: Provision Names object
+    :param reporter: A progress reporter instance (subclass of AbstractProgressReporter)
+    """
+    if reporter is None:
+        reporter = TextProgressReporter()
+
+    try:
+        provision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_configuration_org.ldif", "Exchange Organization objects")
+        modify_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_configuration_finalize.ldif", "Update generic Exchange configuration objects")
+    except LdbError, ldb_error:
+        print ("[!] error while provisioning the Exchange organization"
+               " objects (%d): %s" % ldb_error.args)
+        return False
+    return True
 
 
 def get_ldb_url(lp, creds, names):
@@ -439,6 +464,10 @@ def newuser(names, lp, creds, username=None):
              credentials=creds, lp=lp)
     user_dn = get_user_dn(db, "CN=Users,%s" % names.domaindn, username)
     if user_dn:
+        smtp_user = username
+        if '@' not in smtp_user:
+            smtp_user += '@%s' % names.dnsdomain
+
         extended_user = """
 dn: %(user_dn)s
 changetype: modify
@@ -453,8 +482,8 @@ legacyExchangeDN: /o=%(firstorg)s/ou=%(firstou)s/cn=Recipients/cn=%(username)s
 add: proxyAddresses
 proxyAddresses: =EX:/o=%(firstorg)s/ou=%(firstou)s/cn=Recipients/cn=%(username)s
 proxyAddresses: smtp:postmaster@%(dnsdomain)s
-proxyAddresses: X400:c=US;a= ;p=First Organizati;o=Exchange;s=%(username)s
-proxyAddresses: SMTP:%(username)s@%(dnsdomain)s
+proxyAddresses: X400:c=US;a= ;p=%(firstorg_x400)s;o=%(firstou_x400)s;s=%(username)s
+proxyAddresses: SMTP:%(smtp_user)s
 replace: msExchUserAccountControl
 msExchUserAccountControl: 0
 """
@@ -462,9 +491,12 @@ msExchUserAccountControl: 0
                                       "username": username,
                                       "netbiosname": names.netbiosname,
                                       "firstorg": names.firstorg,
+                                      "firstorg_x400": names.firstorg[:16],
                                       "firstou": names.firstou,
+                                      "firstou_x400": names.firstou[:64],
                                       "domaindn": names.domaindn,
-                                      "dnsdomain": names.dnsdomain}
+                                      "dnsdomain": names.dnsdomain,
+                                      "smtp_user": smtp_user}
         db.modify_ldif(ldif_value)
 
         res = db.search(base=user_dn, scope=SCOPE_BASE, attrs=["*"])
@@ -531,29 +563,31 @@ def checkusage(names, lp, creds):
         mapi_servers = samdb.search(
             base=config_dn, scope=ldb.SCOPE_SUBTREE,
             expression="(&(objectClass=msExchExchangeServer)(cn=%s))" % names.netbiosname)
-        if len(mapi_servers) != 1:
+        server_uses = []
+
+        if len(mapi_servers) == 0:
             # The server is not provisioned.
             raise NotProvisionedError
 
-        server_uses = []
-        # Check if we are the primary folder store server.
-        our_siteFolderName = "CN=Public Folder Store (%s),CN=First Storage Group,CN=InformationStore,CN=%s,CN=Servers,CN=%s,CN=AdministrativeGroups,%s" % (names.netbiosname, names.netbiosname, names.firstou, names.firstorgdn)
-        dn = "CN=%s,CN=Administrative Groups,%s" % (names.firstou,
+        if len(mapi_servers) > 1:
+            # Check if we are the primary folder store server.
+            our_siteFolderName = "CN=Public Folder Store (%s),CN=First Storage Group,CN=InformationStore,CN=%s,CN=Servers,CN=%s,CN=AdministrativeGroups,%s" % (names.netbiosname, names.netbiosname, names.firstou, names.firstorgdn)
+            dn = "CN=%s,CN=Administrative Groups,%s" % (names.firstou,
                                                         names.firstorgdn)
-        ret = samdb.search(base=dn, scope=ldb.SCOPE_BASE, attrs=['siteFolderServer'])
-        assert len(ret) == 1
-        siteFolderName = ret[0]["siteFolderServer"][0]
-        if our_siteFolderName.lower() == siteFolderName.lower():
-            server_uses.append("primary folder store server")
+            ret = samdb.search(base=dn, scope=ldb.SCOPE_BASE, attrs=['siteFolderServer'])
+            assert len(ret) == 1
+            siteFolderName = ret[0]["siteFolderServer"][0]
+            if our_siteFolderName.lower() == siteFolderName.lower():
+                server_uses.append("primary folder store server")
 
-        # Check if we are the primary receipt update service
-        our_addressListServiceLink = "CN=%s,CN=Servers,CN=%s,CN=Administrative Groups,%s" % (names.netbiosname, names.firstou, names.firstorgdn)
-        dn = "CN=Recipient Update Service (%s),CN=Recipient Update Services,CN=Address Lists Container,%s" % (names.domain, names.firstorgdn)
-        ret = samdb.search(base=dn, scope=ldb.SCOPE_BASE, attrs=['msExchAddressListServiceLink'])
-        assert len(ret) == 1
-        addressListServiceLink = ret[0]['msExchAddressListServiceLink'][0]
-        if our_addressListServiceLink.lower() == addressListServiceLink.lower():
-            server_uses.append("primary receipt update service server")
+            # Check if we are the primary receipt update service
+            our_addressListServiceLink = "CN=%s,CN=Servers,CN=%s,CN=Administrative Groups,%s" % (names.netbiosname, names.firstou, names.firstorgdn)
+            dn = "CN=Recipient Update Service (%s),CN=Recipient Update Services,CN=Address Lists Container,%s" % (names.domain, names.firstorgdn)
+            ret = samdb.search(base=dn, scope=ldb.SCOPE_BASE, attrs=['msExchAddressListServiceLink'])
+            assert len(ret) == 1
+            addressListServiceLink = ret[0]['msExchAddressListServiceLink'][0]
+            if our_addressListServiceLink.lower() == addressListServiceLink.lower():
+                server_uses.append("primary receipt update service server")
 
         # Check if we handle any mailbox.
         db = Ldb(
@@ -603,6 +637,11 @@ def provision(setup_path, names, lp, creds, reporter=None):
     # Install OpenChange-specific schemas
     install_schemas(setup_path, names, lp, creds, reporter)
 
+    # Provision first org
+    provision_organization(setup_path, names, lp, creds, reporter)
+
+    print "[SUCCESS] Done!"
+
 
 def deprovision(setup_path, names, lp, creds, reporter=None):
     """Remove all configuration entries added by the OpenChange
@@ -613,14 +652,12 @@ def deprovision(setup_path, names, lp, creds, reporter=None):
     :param lp: Loadparm context
     :param creds: Credentials Context
     :param reporter: A progress reporter instance (subclass of AbstractProgressReporter)
+
+    It is assumed that checkusage has been used before to assure that the server is ready for deprovision
     """
 
     if reporter is None:
         reporter = TextProgressReporter()
-
-    server_uses = checkusage(names, lp, creds)
-    if (len(server_uses) > 0):
-        raise ServerInUseError(', '.join(server_uses))
 
     session_info = system_session()
 
@@ -632,6 +669,8 @@ def deprovision(setup_path, names, lp, creds, reporter=None):
     try:
         # This is the unique server, remove full schema
         deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_configuration.ldif", "Remove Exchange configuration objects")
+        # NOTE: AD schema objects cannot be deleted (it's a feature!)
+        # So we can't remove all object added on provision
     except LdbError, ldb_error:
         print ("[!] error while deprovisioning the Exchange configuration"
                " objects (%d): %s" % ldb_error.args)
@@ -640,25 +679,6 @@ def deprovision(setup_path, names, lp, creds, reporter=None):
         print ("[!] error while deprovisioning the Exchange configuration"
                " objects: %s" % err)
         raise err
-
-    ## NOTE: AD schema objects cannot be deleted (it's a feature!)
-    # try:
-    #     unmodify_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_modify.ldif", "Remove exchange attributes from existing Samba classes")
-    #     unmodify_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_possSuperior.ldif", "Remove possSuperior attributes to Exchange classes")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema.ldif", "Remove Exchange classes from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_sub_mailGateway.ldif", "Remove Exchange mailGateway subcontainers from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_sub_CfgProtocol.ldif", "Remove Exchange CfgProtocol subcontainers from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_subcontainer.ldif", "Remove Exchange *sub* containers from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_container.ldif", "Remove Exchange containers from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_objectCategory.ldif", "Remove Exchange objectCategory from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_auxiliary_class.ldif", "Remove Exchange auxiliary classes from Samba schema")
-    #     deprovision_schema(setup_path, names, lp, creds, reporter, "AD/oc_provision_schema_attributes.ldif", "Remove Exchange attributes from Samba schema")
-    #     print "[SUCCESS] Done!"
-    # except LdbError, ldb_error:
-    #     print ("[!] error while deprovisioning the Exchange"
-    #            " schema classes (%d): %s"
-               # % ldb_error.args)
-
 
 def register(setup_path, names, lp, creds, reporter=None):
     """Register an OpenChange server as a valid Exchange server.
@@ -763,6 +783,16 @@ def openchangedb_deprovision(names, lp, mapistore=None):
     openchangedb.remove()
 
 
+def openchangedb_migrate(lp):
+    uri = openchangedb_url(lp)
+    if uri.startswith('mysql'):
+        openchangedb = mailbox.OpenChangeDBWithMysqlBackend(uri)
+        if openchangedb.migrate():
+            print "Migration openchange db done"
+    else:
+        print "Only OpenchangeDB with MySQL as backend needs migration"
+
+
 def openchangedb_provision(names, lp, uri=None):
     """Create the OpenChange database.
 
@@ -782,6 +812,22 @@ def openchangedb_provision(names, lp, uri=None):
         print "[!] error provisioning openchangedb: Unknown uri `%s`" % uri
         return
     openchangedb.setup(names)
+    openchangedb.add_server(names)
+    openchangedb.add_public_folders(names)
+
+
+def openchangedb_new_organization(names, lp):
+    """Create organization, servers and public folders in openchange db
+
+    :param names: Provision names object
+    :param lp: Loadparm context
+    """
+    uri = openchangedb_url(lp)
+    if uri.startswith('mysql'):
+        openchangedb = mailbox.OpenChangeDBWithMysqlBackend(uri, find_setup_dir())
+    else:
+        openchangedb = mailbox.OpenChangeDB(uri)
+
     openchangedb.add_server(names)
     openchangedb.add_public_folders(names)
 

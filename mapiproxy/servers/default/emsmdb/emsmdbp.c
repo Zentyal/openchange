@@ -3,7 +3,7 @@
 
    EMSMDBP: EMSMDB Provider implementation
 
-   Copyright (C) Julien Kerihuel 2009
+   Copyright (C) Julien Kerihuel 2009-2014
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,6 +31,12 @@
 #include "mapiproxy/libmapiserver/libmapiserver.h"
 
 #include <ldap_ndr.h>
+
+/* Expose samdb_connect prototype */
+struct ldb_context *samdb_connect(TALLOC_CTX *, struct tevent_context *,
+				  struct loadparm_context *,
+				  struct auth_session_info *,
+				  unsigned int);
 
 static struct GUID MagicGUID = {
 	.time_low = 0xbeefface,
@@ -97,7 +103,7 @@ _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 	struct emsmdbp_context	*emsmdbp_ctx;
 	struct tevent_context	*ev;
 	enum mapistore_error	ret;
-	char			*samdb_url;
+	const char		*samdb_url;
 
 	/* Sanity Checks */
 	if (!lp_ctx) return NULL;
@@ -124,12 +130,14 @@ _PUBLIC_ struct emsmdbp_context *emsmdbp_init(struct loadparm_context *lp_ctx,
 
 	/* Retrieve samdb url (local or external) */
 	samdb_url = lpcfg_parm_string(lp_ctx, NULL, "dcerpc_mapiproxy", "samdb_url");
-	if (!samdb_url) {
-		samdb_url = "sam.ldb";
-	}
 
 	/* return an opaque context pointer on samDB database */
-	emsmdbp_ctx->samdb_ctx = samdb_connect_url(mem_ctx, ev, lp_ctx, system_session(lp_ctx), 0, samdb_url);
+	if (!samdb_url) {
+		emsmdbp_ctx->samdb_ctx = samdb_connect(mem_ctx, ev, lp_ctx, system_session(lp_ctx), 0);
+	} else {
+		emsmdbp_ctx->samdb_ctx = samdb_connect_url(mem_ctx, ev, lp_ctx, system_session(lp_ctx), 0, samdb_url);
+	}
+
 	if (!emsmdbp_ctx->samdb_ctx) {
 		talloc_free(mem_ctx);
 		DEBUG(0, ("[%s:%d]: Connection to \"sam.ldb\" failed\n", __FUNCTION__, __LINE__));
@@ -533,4 +541,92 @@ _PUBLIC_ int emsmdbp_source_key_from_fmid(TALLOC_CTX *mem_ctx, struct emsmdbp_co
 	*source_keyP = source_key;
 
 	return MAPISTORE_SUCCESS;
+}
+
+/**
+   \details Extract organization name and group name from the legacy exchange
+   dn of the current logged user.
+
+   \param mem_ctx memory context used for returned values
+   \param emsmdbp_ctx pointer to the EMSMDBP context
+   \param organization_name pointer to the returned organization name
+   \param group_name pointer to the returned group name
+
+   \note You can set organization_name or group_name to NULL if you don't want
+   this values
+
+   \return MAPI_E_SUCCESS or an error if something happens
+ */
+_PUBLIC_ enum MAPISTATUS emsmdbp_fetch_organizational_units(TALLOC_CTX *mem_ctx,
+							    struct emsmdbp_context *emsmdbp_ctx,
+							    char **organization_name,
+							    char **group_name)
+{
+	char 		*exdn0, *exdn1;
+	const char 	*EssDN;
+
+	OPENCHANGE_RETVAL_IF(!emsmdbp_ctx, MAPI_E_NOT_INITIALIZED, NULL);
+	OPENCHANGE_RETVAL_IF(!emsmdbp_ctx->szUserDN, MAPI_E_NOT_INITIALIZED, NULL);
+
+	EssDN = emsmdbp_ctx->szUserDN;
+	// EssDN has format: /o=organizacion name/ou=group name/cn=Recipients/cn=username
+
+	if (organization_name) {
+		exdn0 = strstr(EssDN, "/o=");
+		OPENCHANGE_RETVAL_IF(!exdn0, MAPI_E_BAD_VALUE, NULL);
+		exdn1 = strstr(EssDN, "/ou=");
+		OPENCHANGE_RETVAL_IF(!exdn1, MAPI_E_BAD_VALUE, NULL);
+		*organization_name = talloc_strndup(mem_ctx, exdn0 + 3, exdn1 - exdn0 - 3);
+		OPENCHANGE_RETVAL_IF(!*organization_name, MAPI_E_NOT_ENOUGH_MEMORY, NULL);
+	}
+
+	if (group_name) {
+		exdn0 = strstr(EssDN, "/ou=");
+		OPENCHANGE_RETVAL_IF(!exdn0, MAPI_E_BAD_VALUE, NULL);
+		exdn1 = strstr(EssDN, "/cn=");
+		OPENCHANGE_RETVAL_IF(!exdn1, MAPI_E_BAD_VALUE, NULL);
+		*group_name = talloc_strndup(mem_ctx, exdn0 + 4, exdn1 - exdn0 - 4);
+		OPENCHANGE_RETVAL_IF(!*group_name, MAPI_E_NOT_ENOUGH_MEMORY, NULL);
+	}
+
+	return MAPI_E_SUCCESS;
+}
+
+/**
+   \details Get the organization name (like "First Organization") as a DN.
+
+   \param emsmdbp_ctx pointer to the EMSMDBP context
+   \param basedn pointer to the returned struct ldb_dn
+
+   \return MAPI_E_SUCCESS or an error if something happens
+ */
+_PUBLIC_ enum MAPISTATUS emsmdbp_get_org_dn(struct emsmdbp_context *emsmdbp_ctx, struct ldb_dn **basedn)
+{
+	enum MAPISTATUS		retval;
+	int			ret;
+	struct ldb_result	*res = NULL;
+	char			*org_name;
+
+	OPENCHANGE_RETVAL_IF(!emsmdbp_ctx, MAPI_E_NOT_INITIALIZED, NULL);
+	OPENCHANGE_RETVAL_IF(!emsmdbp_ctx->samdb_ctx, MAPI_E_NOT_INITIALIZED, NULL);
+	OPENCHANGE_RETVAL_IF(!basedn, MAPI_E_INVALID_PARAMETER, NULL);
+
+	retval = emsmdbp_fetch_organizational_units(emsmdbp_ctx, emsmdbp_ctx, &org_name, NULL);
+	OPENCHANGE_RETVAL_IF(retval != MAPI_E_SUCCESS, retval, NULL);
+
+	ret = ldb_search(emsmdbp_ctx->samdb_ctx, emsmdbp_ctx, &res,
+			 ldb_get_config_basedn(emsmdbp_ctx->samdb_ctx),
+                         LDB_SCOPE_SUBTREE, NULL,
+                         "(&(objectClass=msExchOrganizationContainer)(cn=%s))", org_name);
+	talloc_free(org_name);
+
+	/* If the search failed */
+        if (ret != LDB_SUCCESS) {
+	  	DEBUG(1, ("emsmdbp_get_org_dn ldb_search failure.\n"));
+		return MAPI_E_NOT_FOUND;
+        }
+
+	*basedn = ldb_dn_new(emsmdbp_ctx, emsmdbp_ctx->samdb_ctx,
+			     ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
+	return MAPI_E_SUCCESS;
 }
