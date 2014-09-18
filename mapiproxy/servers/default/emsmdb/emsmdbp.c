@@ -218,7 +218,7 @@ _PUBLIC_ bool emsmdbp_verify_user(struct dcesrv_call_state *dce_call,
 
 	ret = ldb_search(emsmdbp_ctx->samdb_ctx, emsmdbp_ctx, &res,
 			 ldb_get_default_basedn(emsmdbp_ctx->samdb_ctx),
-			 LDB_SCOPE_SUBTREE, recipient_attrs, "sAMAccountName=%s", username);
+			 LDB_SCOPE_SUBTREE, recipient_attrs, "sAMAccountName=%s", ldb_binary_encode_string(emsmdbp_ctx, username));
 
 	/* If the search failed */
 	if (ret != LDB_SUCCESS || !res->count) {
@@ -274,7 +274,7 @@ _PUBLIC_ bool emsmdbp_verify_userdn(struct dcesrv_call_state *dce_call,
 	ret = ldb_search(emsmdbp_ctx->samdb_ctx, emsmdbp_ctx, &res,
 			 ldb_get_default_basedn(emsmdbp_ctx->samdb_ctx),
 			 LDB_SCOPE_SUBTREE, recipient_attrs, "(legacyExchangeDN=%s)",
-			 legacyExchangeDN);
+			 ldb_binary_encode_string(emsmdbp_ctx, legacyExchangeDN));
 
 	/* If the search failed */
 	if (ret != LDB_SUCCESS || !res->count) {
@@ -342,7 +342,7 @@ _PUBLIC_ enum MAPISTATUS emsmdbp_resolve_recipient(TALLOC_CTX *mem_ctx,
 			 ldb_get_default_basedn(emsmdbp_ctx->samdb_ctx),
 			 LDB_SCOPE_SUBTREE, recipient_attrs,
 			 "(&(objectClass=user)(sAMAccountName=*%s*)(!(objectClass=computer)))",
-			 recipient);
+			 ldb_binary_encode_string(emsmdbp_ctx, recipient));
 
 	/* If the search failed, build an external recipient: very basic for the moment */
 	if (ret != LDB_SUCCESS || !res->count) {

@@ -1113,7 +1113,7 @@ static void dcesrv_NspiResolveNames(struct dcesrv_call_state *dce_call,
 
 		/* Build search filter */
 		for (j = 0; j < ARRAY_SIZE(search_attr); j++) {
-			char *attr_filter = talloc_asprintf(mem_ctx, "(%s=%s)", search_attr[j], paStr->Strings[i]);
+			char *attr_filter = talloc_asprintf(mem_ctx, "(%s=%s)", search_attr[j], ldb_binary_encode_string(mem_ctx, paStr->Strings[i]));
 			filter = talloc_strdup_append(filter, attr_filter);
 			talloc_free(attr_filter);
 		}
@@ -1229,7 +1229,7 @@ static void dcesrv_NspiResolveNamesW(struct dcesrv_call_state *dce_call,
 
 		/* Build search filter */
 		for (j = 0; j < ARRAY_SIZE(search_attr); j++) {
-			char	*attr_filter = talloc_asprintf(mem_ctx, "(%s=%s)", search_attr[j], paWStr->Strings[i]);
+			char	*attr_filter = talloc_asprintf(mem_ctx, "(%s=%s)", search_attr[j], ldb_binary_encode_string(mem_ctx, paWStr->Strings[i]));
 			filter = talloc_strdup_append(filter, attr_filter);
 			talloc_free(attr_filter);
 		}

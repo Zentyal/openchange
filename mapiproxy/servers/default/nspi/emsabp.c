@@ -137,7 +137,7 @@ _PUBLIC_ enum MAPISTATUS emsabp_get_account_info(TALLOC_CTX *mem_ctx,
 	ret = ldb_search(emsabp_ctx->samdb_ctx, mem_ctx, &res,
 			 ldb_get_default_basedn(emsabp_ctx->samdb_ctx),
 			 LDB_SCOPE_SUBTREE, recipient_attrs, "sAMAccountName=%s",
-			 username);
+			 ldb_binary_encode_string(mem_ctx, username));
 	OPENCHANGE_RETVAL_IF((ret != LDB_SUCCESS || !res->count), MAPI_E_NOT_FOUND, NULL);
 
 	/* Check if more than one record was found */
@@ -1086,6 +1086,7 @@ _PUBLIC_ enum MAPISTATUS emsabp_search(TALLOC_CTX *mem_ctx, struct emsabp_contex
 		if (attr == NULL) {
 			return MAPI_E_NO_SUPPORT;
 		}
+		attr = ldb_binary_encode_string(mem_ctx, attr);
 
 		/* Special case: anr doesn't return correct result with partial search */
 		if (!strcmp(fmt_attr, "anr")) {
@@ -1204,14 +1205,14 @@ _PUBLIC_ enum MAPISTATUS emsabp_search_legacyExchangeDN(struct emsabp_context *e
 	ret = ldb_search(emsabp_ctx->samdb_ctx, emsabp_ctx->mem_ctx, &res,
 			 ldb_get_config_basedn(emsabp_ctx->samdb_ctx), 
 			 LDB_SCOPE_SUBTREE, recipient_attrs, "(legacyExchangeDN=%s)",
-			 legacyDN);
+			 ldb_binary_encode_string(emsabp_ctx->mem_ctx, legacyDN));
 
 	if (ret != LDB_SUCCESS || res->count == 0) {
 		*pbUseConfPartition = false;
 		ret = ldb_search(emsabp_ctx->samdb_ctx, emsabp_ctx->mem_ctx, &res,
 				 ldb_get_default_basedn(emsabp_ctx->samdb_ctx),
 				 LDB_SCOPE_SUBTREE, recipient_attrs, "(legacyExchangeDN=%s)",
-				 legacyDN);
+				 ldb_binary_encode_string(emsabp_ctx->mem_ctx, legacyDN));
 	}
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, NULL);
 
