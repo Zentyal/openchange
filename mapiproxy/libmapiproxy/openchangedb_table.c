@@ -199,10 +199,10 @@ static char *openchangedb_table_build_filter(TALLOC_CTX *mem_ctx, struct opencha
 			filter = talloc_asprintf_append(filter, "(%s=", PidTagAttr);
 			switch (restrictions->res.resProperty.ulPropTag & 0xFFFF) {
 			case PT_STRING8:
-				filter = talloc_asprintf_append(filter, "%s)", restrictions->res.resProperty.lpProp.value.lpszA);
+				filter = talloc_asprintf_append(filter, "%s)", ldb_binary_encode_string(filter, restrictions->res.resProperty.lpProp.value.lpszA));
 				break;
 			case PT_UNICODE:
-				filter = talloc_asprintf_append(filter, "%s)", restrictions->res.resProperty.lpProp.value.lpszW);
+				filter = talloc_asprintf_append(filter, "%s)", ldb_binary_encode_string(filter, restrictions->res.resProperty.lpProp.value.lpszW));
 				break;
 			default:
 				DEBUG(0, ("Unsupported RES_PROPERTY property type: 0x%.4x\n", (restrictions->res.resProperty.ulPropTag & 0xFFFF)));

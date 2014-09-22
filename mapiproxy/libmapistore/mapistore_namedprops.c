@@ -276,7 +276,7 @@ _PUBLIC_ enum mapistore_error mapistore_namedprops_get_mapped_id(struct ldb_cont
 		break;
 	case MNID_STRING:
 		filter = talloc_asprintf(mem_ctx, "(&(objectClass=MNID_STRING)(oleguid=%s)(cn=%s))",
-					 guid, nameid.kind.lpwstr.Name);
+					 guid, ldb_binary_encode_string(mem_ctx, nameid.kind.lpwstr.Name));
 		break;
 	}
 	talloc_free(guid);

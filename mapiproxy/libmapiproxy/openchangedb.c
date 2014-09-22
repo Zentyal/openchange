@@ -67,7 +67,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_SystemFolderID(struct ldb_context *ldb
 
 	/* Step 1. Search Mailbox Root DN */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 
@@ -242,7 +242,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_MailboxGuid(struct ldb_context *ldb_ct
 
 	/* Step 1. Search Mailbox DN */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 	
 	/* Step 2. Retrieve MailboxGUID attribute's value */
@@ -286,7 +286,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_MailboxReplica(struct ldb_context *ldb
 
 	/* Step 1. Search Mailbox DN */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 
@@ -514,13 +514,13 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_fid(struct ldb_context *ldb_ctx, const
 	mem_ctx = talloc_named(NULL, 0, "openchangedb_get_fid");
 
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)", mapistoreURL);
+			 LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)", ldb_binary_encode_string(mem_ctx, mapistoreURL));
 	if (ret != LDB_SUCCESS || !res->count) {
 		len = strlen(mapistoreURL);
 		if (mapistoreURL[len-1] == '/') {
 			slashLessURL = talloc_strdup(mem_ctx, mapistoreURL);
 			slashLessURL[len-1] = 0;
-			ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx), LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)", slashLessURL);
+			ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx), LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)", ldb_binary_encode_string(mem_ctx, slashLessURL));
 		}
 		OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 	}
@@ -557,7 +557,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_MAPIStoreURIs(struct ldb_context *ldb_
 
 	/* fetch mailbox DN */
 	ret = ldb_search(ldb_ctx, local_mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "(&(cn=%s)(MailboxGUID=*))", username);
+			 LDB_SCOPE_SUBTREE, attrs, "(&(cn=%s)(MailboxGUID=*))", ldb_binary_encode_string(mem_ctx, username));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, local_mem_ctx);
 
 	dnstr = talloc_strdup(local_mem_ctx, ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
@@ -626,7 +626,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_ReceiveFolder(TALLOC_CTX *parent_ctx,
 
 	/* Step 1. Find mailbox DN for the recipient */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 
 	dnstr = talloc_strdup(mem_ctx, ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
@@ -717,7 +717,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_TransportFolder(struct ldb_context *ld
 
 	/* Step 1. Find mailbox DN for the recipient */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 
 	dnstr = talloc_strdup(mem_ctx, ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
@@ -1600,7 +1600,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_fid_by_name(struct ldb_context *ldb_ct
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
 			 LDB_SCOPE_SUBTREE, attrs,
 			 "(&(PidTagParentFolderId=%"PRIu64")(PidTagDisplayName=%s))",
-			 parent_fid, foldername);
+			 parent_fid, ldb_binary_encode_string(mem_ctx, foldername));
 
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS, MAPI_E_NOT_FOUND, mem_ctx);
 
@@ -1644,7 +1644,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_mid_by_subject(struct ldb_context *ldb
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, base_dn,
 			 LDB_SCOPE_SUBTREE, attrs,
 			 "(&(PidTagParentFolderId=%"PRIu64")(PidTagNormalizedSubject=%s))",
-			 parent_fid, subject);
+			 parent_fid, ldb_binary_encode_string(mem_ctx, subject));
 
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS, MAPI_E_NOT_FOUND, mem_ctx);
 
@@ -1718,7 +1718,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_set_ReceiveFolder(struct ldb_context *ldb_
 	
 	/* Step 1. Find mailbox DN for the recipient */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", recipient);
+			 LDB_SCOPE_SUBTREE, attrs, "CN=%s", ldb_binary_encode_string(mem_ctx, recipient));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 
 	dnstr = talloc_strdup(mem_ctx, ldb_msg_find_attr_as_string(res->msgs[0], "distinguishedName", NULL));
@@ -1733,7 +1733,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_set_ReceiveFolder(struct ldb_context *ldb_
 
 	/* Step 2. Search for the MessageClass within user's mailbox */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, dn, LDB_SCOPE_SUBTREE, attrs, 
-			 "(PidTagMessageClass=%s)", MessageClass);
+			 "(PidTagMessageClass=%s)", ldb_binary_encode_string(mem_ctx, MessageClass));
 	DEBUG(5, ("openchangedb_get_ReceiveFolder, res->count: %i\n", res->count));
 
 	/* We should never have more than one record with a specific MessageClass */
@@ -1809,7 +1809,8 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_fid_from_partial_uri(struct ldb_contex
 
 	/* Search mapistoreURI given partial URI */
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
-			 LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)", partialURI);
+			 LDB_SCOPE_SUBTREE, attrs, "(MAPIStoreURI=%s)",
+			 ldb_binary_encode_string(mem_ctx, partialURI));
 
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 	OPENCHANGE_RETVAL_IF(res->count > 1, MAPI_E_COLLISION, mem_ctx);
@@ -1863,7 +1864,7 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_users_from_partial_uri(TALLOC_CTX *par
 		/* Retrieve the system user name */
 		mailboxDN = ldb_msg_find_attr_as_string(res->msgs[i], "mailboxDN", NULL);
 		dn = ldb_dn_new(mem_ctx, ldb_ctx, mailboxDN);
-		ret = ldb_search(ldb_ctx, mem_ctx, &mres, dn, LDB_SCOPE_SUBTREE, attrs, "(distinguishedName=%s)", mailboxDN);
+		ret = ldb_search(ldb_ctx, mem_ctx, &mres, dn, LDB_SCOPE_SUBTREE, attrs, "(distinguishedName=%s)", ldb_binary_encode_string(mem_ctx, mailboxDN));
 		/* This should NEVER happen */
 		OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS || !res->count, MAPI_E_NOT_FOUND, mem_ctx);
 		tmp = ldb_msg_find_attr_as_string(mres->msgs[0], "cn", NULL);
@@ -2088,7 +2089,8 @@ _PUBLIC_ enum MAPISTATUS openchangedb_get_message_count(struct ldb_context *ldb_
 	objectClass = (fai ? "faiMessage" : "systemMessage");
 	ret = ldb_search(ldb_ctx, mem_ctx, &res, ldb_get_default_basedn(ldb_ctx),
 			 LDB_SCOPE_SUBTREE, attrs, 
-			 "(&(objectClass=%s)(PidTagParentFolderId=%"PRIu64"))", objectClass, fid);
+			 "(&(objectClass=%s)(PidTagParentFolderId=%"PRIu64"))",
+			 ldb_binary_encode_string(mem_ctx, objectClass), fid);
 	printf("ldb error: %s\n", ldb_errstring(ldb_ctx));
 	OPENCHANGE_RETVAL_IF(ret != LDB_SUCCESS, MAPI_E_NOT_FOUND, mem_ctx);
 	

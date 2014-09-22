@@ -1093,7 +1093,7 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_object_mailbox_init(TALLOC_CTX *mem_ctx,
 		ret = ldb_search(emsmdbp_ctx->samdb_ctx, mem_ctx, &res,
 				 ldb_get_default_basedn(emsmdbp_ctx->samdb_ctx),
 				 LDB_SCOPE_SUBTREE, recipient_attrs, "legacyExchangeDN=%s", 
-				 object->object.mailbox->owner_EssDN);
+				 ldb_binary_encode_string(mem_ctx, object->object.mailbox->owner_EssDN));
 		if (!ret && res->count == 1) {
 			accountName = ldb_msg_find_attr_as_string(res->msgs[0], "sAMAccountName", NULL);
 			if (accountName) {
