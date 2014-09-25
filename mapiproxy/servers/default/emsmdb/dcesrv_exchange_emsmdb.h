@@ -134,7 +134,6 @@ struct emsmdbp_object_folder {
 };
 
 struct emsmdbp_object_message {
-	uint64_t				folderID;
 	uint64_t				messageID;
 	bool					read_write;
 	struct mapistore_freebusy_properties	*fb_properties;
@@ -299,6 +298,8 @@ bool			emsmdbp_destructor(void *);
 bool			emsmdbp_verify_user(struct dcesrv_call_state *, struct emsmdbp_context *);
 bool			emsmdbp_verify_userdn(struct dcesrv_call_state *, struct emsmdbp_context *, const char *, struct ldb_message **);
 enum MAPISTATUS		emsmdbp_resolve_recipient(TALLOC_CTX *, struct emsmdbp_context *, char *, struct mapi_SPropTagArray *, struct RecipientRow *);
+enum MAPISTATUS		emsmdbp_fetch_organizational_units(TALLOC_CTX *, struct emsmdbp_context *, char **, char **);
+enum MAPISTATUS		emsmdbp_get_org_dn(struct emsmdbp_context *, struct ldb_dn **);
 
 const struct GUID *const	MagicGUIDp;
 int				emsmdbp_guid_to_replid(struct emsmdbp_context *, const char *username, const struct GUID *, uint16_t *);
@@ -329,7 +330,7 @@ struct emsmdbp_object *emsmdbp_object_init(TALLOC_CTX *, struct emsmdbp_context 
 int emsmdbp_object_copy_properties(struct emsmdbp_context *, struct emsmdbp_object *, struct emsmdbp_object *, struct SPropTagArray *, bool);
 struct emsmdbp_object *emsmdbp_object_mailbox_init(TALLOC_CTX *, struct emsmdbp_context *, const char *, bool);
 struct emsmdbp_object *emsmdbp_object_folder_init(TALLOC_CTX *, struct emsmdbp_context *, uint64_t, struct emsmdbp_object *);
-int emsmdbp_folder_get_folder_count(struct emsmdbp_context *, struct emsmdbp_object *, uint32_t *);
+enum MAPISTATUS      emsmdbp_folder_get_folder_count(struct emsmdbp_context *, struct emsmdbp_object *, uint32_t *);
 enum mapistore_error emsmdbp_folder_delete(struct emsmdbp_context *, struct emsmdbp_object *, uint64_t, uint8_t);
 enum mapistore_error emsmdbp_folder_move_folder(struct emsmdbp_context *, struct emsmdbp_object *, struct emsmdbp_object *, TALLOC_CTX *, const char *);
 struct emsmdbp_object *emsmdbp_folder_open_table(TALLOC_CTX *, struct emsmdbp_object *, uint32_t, uint32_t);

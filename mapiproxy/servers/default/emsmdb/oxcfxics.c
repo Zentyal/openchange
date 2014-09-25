@@ -1625,7 +1625,7 @@ static inline void oxcfxics_fill_synccontext_fasttransfer_response(struct FastTr
 
 	owner = emsmdbp_get_owner(parent_object);
 
-	DEBUG(5, ("start syncstream: position = %zu, size = %zu\n", synccontext->stream.position, synccontext->stream.buffer.length));
+	DEBUG(5, ("syncstream: start - position = %zu, size = %zu\n", synccontext->stream.position, synccontext->stream.buffer.length));
 	if (synccontext->stream.position + request_buffer_size < synccontext->stream.buffer.length) {
 		/* the current chunk has not been "emptied" yet */
 		buffer_size = oxcfxics_advance_cutmarks(synccontext, request_buffer_size);
@@ -1634,7 +1634,7 @@ static inline void oxcfxics_fill_synccontext_fasttransfer_response(struct FastTr
 	else {
 		/* the current chunk not does exist or we reached its end */
 		if (synccontext->request.contents_mode) {
-			DEBUG(5, ("content mode, stage %d\n", synccontext->sync_stage));
+			DEBUG(5, ("syncstream: content mode, stage %d\n", synccontext->sync_stage));
 			if (synccontext->sync_stage == 4) {
 				/* the last chunk was the last one */
 				end_of_buffer = true;
@@ -1698,7 +1698,7 @@ static inline void oxcfxics_fill_synccontext_fasttransfer_response(struct FastTr
 				response->TransferBuffer = joint_buffer;
 
 
-				DEBUG(5, ("joint buffers of sizes %zu and %zu\n", old_chunk_size, new_chunk_size));
+				DEBUG(5, ("syncstream: joint buffers of sizes %zu and %zu\n", old_chunk_size, new_chunk_size));
 			}
 		}
 		else {
@@ -1709,7 +1709,7 @@ static inline void oxcfxics_fill_synccontext_fasttransfer_response(struct FastTr
 			else {
 				oxcfxics_prepare_synccontext_with_folderChange(synccontext, mem_ctx, parent_object->emsmdbp_ctx, owner, parent_object);
 				oxcfxics_check_cutmark_buffer(synccontext->cutmarks, &synccontext->stream.buffer);
-				DEBUG(5, ("synccontext buffer is %u bytes long\n", (uint32_t) synccontext->stream.buffer.length));
+				DEBUG(5, ("syncstream: synccontext buffer is %u bytes long\n", (uint32_t) synccontext->stream.buffer.length));
 			}
 			response->TransferBuffer = emsmdbp_stream_read_buffer(&synccontext->stream, buffer_size);
 		}
@@ -1725,7 +1725,7 @@ static inline void oxcfxics_fill_synccontext_fasttransfer_response(struct FastTr
 		response->TransferStatus = TransferStatus_Partial;
 		response->InProgressCount = synccontext->steps;
 	}
- 	DEBUG(5, ("  end syncstream: position = %zu, size = %zu", synccontext->stream.position, synccontext->stream.buffer.length));
+	DEBUG(5, ("  syncstream: end - position = %zu, size = %zu\n", synccontext->stream.position, synccontext->stream.buffer.length));
 }
 
 

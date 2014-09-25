@@ -613,17 +613,22 @@ FolderId: 0x67ca828f02000001      Display Name: "                        ";  Con
 		}
 
 		/* find out whether "LocalFreebusy" message exists */
-		mapistore_folder_open_table(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, MAPISTORE_MESSAGE_TABLE, 0, &backend_table, &row_count);
+		retval = mapistore_folder_open_table(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, MAPISTORE_MESSAGE_TABLE, 0, &backend_table, &row_count);
+		MAPISTORE_RETVAL_IF(retval != MAPISTORE_SUCCESS, retval, mem_ctx);
 		restriction.rt = RES_PROPERTY;
 		restriction.res.resProperty.relop = RELOP_EQ;
 		restriction.res.resProperty.ulPropTag = restriction.res.resProperty.lpProp.ulPropTag = PidTagSubject;
 		restriction.res.resProperty.lpProp.value.lpszW = "LocalFreebusy";
-		mapistore_table_set_restrictions(emsmdbp_ctx->mstore_ctx, context_id, backend_table, &restriction, &status);
-		mapistore_table_get_row_count(emsmdbp_ctx->mstore_ctx, context_id, backend_table, MAPISTORE_PREFILTERED_QUERY, &row_count);
+		retval = mapistore_table_set_restrictions(emsmdbp_ctx->mstore_ctx, context_id, backend_table, &restriction, &status);
+		MAPISTORE_RETVAL_IF(retval != MAPISTORE_SUCCESS, retval, mem_ctx);
+		retval = mapistore_table_get_row_count(emsmdbp_ctx->mstore_ctx, context_id, backend_table, MAPISTORE_PREFILTERED_QUERY, &row_count);
+		MAPISTORE_RETVAL_IF(retval != MAPISTORE_SUCCESS, retval, mem_ctx);
 		if (row_count == 0) {
 			/* create the message */
 			openchangedb_get_new_folderID(emsmdbp_ctx->oc_ctx, &current_mid);
-			if (mapistore_folder_create_message(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, current_mid, false, &backend_message) != MAPISTORE_SUCCESS) {
+			retval = mapistore_folder_create_message(emsmdbp_ctx->mstore_ctx, context_id, backend_object, mem_ctx, current_mid, false, &backend_message);
+			if (retval != MAPISTORE_SUCCESS) {
+				DEBUG(0, ("Fatal: Failed to create FAI message for LocalFreebusy. Error is %s (0x%.8x)\n", mapistore_errstr(retval), retval));
 				abort();
 			}
 
