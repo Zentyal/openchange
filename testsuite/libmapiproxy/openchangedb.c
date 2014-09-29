@@ -87,7 +87,7 @@ START_TEST (test_get_MailboxGuid) {
 } END_TEST
 
 START_TEST (test_get_MailboxReplica) {
-	TALLOC_CTX *local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	TALLOC_CTX *local_mem_ctx = talloc_new(NULL);
 	struct GUID *repl = talloc_zero(local_mem_ctx, struct GUID);
 	struct GUID *expected_repl = talloc_zero(local_mem_ctx, struct GUID);
 	uint16_t *repl_id = talloc_zero(local_mem_ctx, uint16_t);
@@ -104,7 +104,7 @@ START_TEST (test_get_MailboxReplica) {
 } END_TEST
 
 START_TEST (test_get_PublicFolderReplica) {
-	TALLOC_CTX *local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	TALLOC_CTX *local_mem_ctx = talloc_new(NULL);
 	struct GUID *repl = talloc_zero(local_mem_ctx, struct GUID);
 	struct GUID *expected_repl = talloc_zero(local_mem_ctx, struct GUID);
 	uint16_t *repl_id = talloc_zero(local_mem_ctx, uint16_t);
@@ -1002,7 +1002,8 @@ START_TEST (test_build_table_folders_live_filtering) {
 	enum MAPITAGS prop;
 	uint32_t i;
 	struct mapi_SRestriction res;
-	int ok = 0, bad = 0, idx;
+	int ok = 0, bad = 0;
+	int idx = 0;
 
 	fid = 17438782182108692481ul;
 	retval = openchangedb_table_init(g_mem_ctx, g_oc_ctx, USER1, 1, fid, &table);
@@ -1071,6 +1072,24 @@ START_TEST (test_set_receive_folder_to_mailbox) {
 	ck_assert_str_eq(explicit, "IPC");
 } END_TEST
 
+START_TEST (test_get_indexing_url) {
+	enum MAPISTATUS retval;
+	const char	*indexing_url;
+
+	/* Valid indexing url */
+	retval = openchangedb_get_indexing_url(g_oc_ctx, USER1, &indexing_url);
+	CHECK_SUCCESS;
+	ck_assert_str_eq(indexing_url, "mysql://openchange@localhost/openchange");
+
+	/* indexing_url is NULL */
+	retval = openchangedb_get_indexing_url(g_oc_ctx, "null_indexing_url", &indexing_url);
+	ck_assert_int_eq(retval, MAPI_E_NOT_FOUND);
+
+	/* indexing_url is empty - "" */
+	retval = openchangedb_get_indexing_url(g_oc_ctx, "empty_indexing_url", &indexing_url);
+	ck_assert_int_eq(retval, MAPI_E_NOT_FOUND);
+} END_TEST
+
 // ^ Unit test ----------------------------------------------------------------
 
 // v Suite definition ---------------------------------------------------------
@@ -1081,7 +1100,7 @@ static void create_ldb_from_ldif(const char *ldb_path, const char *ldif_path,
 	FILE *f;
 	struct ldb_ldif *ldif;
 	struct ldb_context *ldb_ctx = NULL;
-	TALLOC_CTX *local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	TALLOC_CTX *local_mem_ctx = talloc_new(NULL);
 	struct ldb_message *msg;
 
 	ldb_ctx = ldb_init(local_mem_ctx, NULL);
@@ -1120,11 +1139,13 @@ static void create_ldb_from_ldif(const char *ldb_path, const char *ldif_path,
 
 static void ldb_setup(void)
 {
+	int ret;
+
 	create_ldb_from_ldif(OPENCHANGEDB_LDB, OPENCHANGEDB_SAMPLE_LDIF,
 			     LDB_DEFAULT_CONTEXT, LDB_ROOT_CONTEXT);
 
-	g_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-	int ret = openchangedb_ldb_initialize(g_mem_ctx, RESOURCES_DIR, &g_oc_ctx);
+	g_mem_ctx = talloc_new(talloc_autofree_context());
+	ret = openchangedb_ldb_initialize(g_mem_ctx, RESOURCES_DIR, &g_oc_ctx);
 	if (ret != MAPI_E_SUCCESS) {
 		fprintf(stderr, "Error initializing openchangedb %d\n", ret);
 		ck_abort();
@@ -1139,7 +1160,7 @@ static void ldb_teardown(void)
 
 static void mysql_setup(void)
 {
-	g_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	g_mem_ctx = talloc_new(talloc_autofree_context());
 	initialize_mysql_with_file(g_mem_ctx, OPENCHANGEDB_SAMPLE_SQL, &g_oc_ctx);
 }
 
@@ -1212,6 +1233,7 @@ static Suite *openchangedb_create_suite(const char *backend_name,
 		// Ugly workaround to test mysql only functions
 		tcase_add_test(tc, test_set_locale);
 		tcase_add_test(tc, test_get_folders_names);
+		tcase_add_test(tc, test_get_indexing_url);
 	}
 
 	tcase_add_test(tc, test_set_receive_folder_to_mailbox);

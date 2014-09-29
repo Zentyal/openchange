@@ -60,50 +60,97 @@ static float timespec_diff_in_seconds(struct timespec *end, struct timespec *sta
 }
 
 
+/**
+   \details Parse mysql connection string with format like:
+		mysql://user[:pass]@host/database
+
+   \param mem_ctx pointer to the memory context
+   \param connection_string pointer to conenction string
+   \param host out parameter to store host into
+   \param user out parameter to store user name into
+   \param passwd out parameter to store password into - optional
+   \param db out parameter to store database name into
+
+   \return true on success, false if invalid connection string
+ */
 static bool parse_connection_string(TALLOC_CTX *mem_ctx,
 				    const char *connection_string,
 				    char **host, char **user, char **passwd,
 				    char **db)
 {
-	// connection_string has format mysql://user[:pass]@host/database
-	int prefix_size = strlen("mysql://");
-	const char *s = connection_string + prefix_size;
-	if (!connection_string || strlen(connection_string) < prefix_size ||
-	    !strstr(connection_string, "mysql://") || !strchr(s, '@') ||
-	    !strchr(s, '/')) {
-		// Invalid format
+	const char	*user_p;
+	size_t		user_len;
+	const char	*pass_p;
+	size_t		pass_len;
+	const char	*host_p;
+	size_t		host_len;
+	const char *db_p;
+
+	/* Sanity check on input parameters */
+	if (!connection_string || !connection_string[0]) {
 		return false;
 	}
-	if (strchr(s, ':') == NULL || strchr(s, ':') > strchr(s, '@')) {
-		// No password
-		int user_size = strchr(s, '@') - s;
-		*user = talloc_zero_array(mem_ctx, char, user_size + 1);
-		strncpy(*user, s, user_size);
-		(*user)[user_size] = '\0';
-		*passwd = talloc_zero_array(mem_ctx, char, 1);
-		(*passwd)[0] = '\0';
-	} else {
-		// User
-		int user_size = strchr(s, ':') - s;
-		*user = talloc_zero_array(mem_ctx, char, user_size);
-		strncpy(*user, s, user_size);
-		(*user)[user_size] = '\0';
-		// Password
-		int passwd_size = strchr(s, '@') - strchr(s, ':') - 1;
-		*passwd = talloc_zero_array(mem_ctx, char, passwd_size + 1);
-		strncpy(*passwd, strchr(s, ':') + 1, passwd_size);
-		(*passwd)[passwd_size] = '\0';
+	if (!host || !user || !passwd || !db) {
+		return false;
 	}
-	// Host
-	int host_size = strchr(s, '/') - strchr(s, '@') - 1;
-	*host = talloc_zero_array(mem_ctx, char, host_size + 1);
-	strncpy(*host, strchr(s, '@') + 1, host_size);
-	(*host)[host_size] = '\0';
-	// Database name
-	int db_size = strlen(strchr(s, '/') + 1);
-	*db = talloc_zero_array(mem_ctx, char, db_size + 1);
-	strncpy(*db, strchr(s, '/') + 1, db_size);
-	(*db)[db_size] = '\0';
+
+	/* check for prefix - len(mysql://) = 8 */
+	if (strncasecmp(connection_string, "mysql://", 8)) {
+		return false;
+	}
+
+	/* skip prefix */
+	user_p = connection_string + 8;
+	/* find out host offset */
+	host_p = strchr(user_p, '@');
+	if (!host_p) {
+		return false;
+	}
+	host_p++;
+	/* find out db name offset */
+	db_p = strchr(host_p, '/');
+	if (!db_p) {
+		return false;
+	}
+	host_len = db_p - host_p;
+	db_p++;
+
+	if (!db_p[0]) {
+		/* empty database name */
+		return false;
+	}
+	if (!host_len) {
+		/* no hostname in connection string */
+		return false;
+	}
+
+	/* check for password - it is optional */
+	pass_p = strchr(user_p, ':');
+	if (pass_p) {
+		pass_p++;
+		if (pass_p > host_p) {
+			/* : found after host offset! */
+			return false;
+		}
+		if (pass_p == user_p) {
+			/* username is empty */
+			return false;
+		}
+		user_len = pass_p - user_p - 1;
+		pass_len = host_p  - pass_p - 1;
+	} else {
+		user_len = host_p - user_p - 1;
+		pass_len = 0;
+	}
+
+	if (!user_len) {
+		/* username is empty */
+		return false;
+	}
+	*user = talloc_strndup(mem_ctx, user_p, user_len);
+	*passwd = talloc_strndup(mem_ctx, pass_p, pass_len);
+	*host = talloc_strndup(mem_ctx, host_p, host_len);
+	*db = talloc_strdup(mem_ctx, db_p);
 
 	return true;
 }
@@ -111,50 +158,69 @@ static bool parse_connection_string(TALLOC_CTX *mem_ctx,
 
 MYSQL *create_connection(const char *connection_string, MYSQL **conn)
 {
-	TALLOC_CTX	*mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	TALLOC_CTX	*mem_ctx;
 	my_bool		reconnect;
 	char		*host, *user, *passwd, *db, *sql;
 	bool		parsed;
 	struct conn_v	*entry = NULL, *retval = NULL;
 
+	if (conn == NULL) return NULL;
+	if (*conn != NULL) return *conn;
+
 	retval = htable_get(&ht, hash_string(connection_string), _ht_cmp, connection_string);
 	if (retval) {
-		DEBUG(3, ("MYSQL found connection, reusing it %"PRIu32"\n", hash_string(connection_string)));
+		DEBUG(5, ("[MYSQL] Found connection, reusing it %"PRIu32"\n", hash_string(connection_string)));
 		*conn = retval->conn;
 		goto end;
 	}
+
 	*conn = mysql_init(NULL);
 	reconnect = true;
 	mysql_options(*conn, MYSQL_OPT_RECONNECT, &reconnect);
+
+	mem_ctx = talloc_zero(NULL, TALLOC_CTX);
+	if (!mem_ctx) return NULL;
+
 	parsed = parse_connection_string(mem_ctx, connection_string,
 					 &host, &user, &passwd, &db);
 	if (!parsed) {
-		DEBUG(0, ("Wrong connection string to mysql %s\n", connection_string));
+		DEBUG(0, ("[MYSQL] Wrong connection string %s\n", connection_string));
 		*conn = NULL;
 		goto end;
 	}
+
+	*conn = mysql_init(NULL);
+
 	// First try to connect to the database, if it fails try to create it
 	if (mysql_real_connect(*conn, host, user, passwd, db, 0, NULL, 0)) {
-		DEBUG(3, ("MYSQL connection done\n"));
+		DEBUG(5, ("[MYSQL] Connection done\n"));
 		goto connected;
 	}
+
+	reconnect = true;
+	mysql_options(*conn, MYSQL_OPT_RECONNECT, &reconnect);
 
 	// Try to create database
 	if (!mysql_real_connect(*conn, host, user, passwd, NULL, 0, NULL, 0)) {
 		// Nop
-		DEBUG(0, ("Can't connect to mysql using %s\n", connection_string));
+		DEBUG(0, ("[MYSQL] Can't connect to server using %s, error: %s\n",
+			  connection_string, mysql_error(*conn)));
+		mysql_close(*conn);
 		*conn = NULL;
 		goto end;
 	} else {
-		DEBUG(3, ("MYSQL connection done, let's create the database\n"));
+		DEBUG(5, ("[MYSQL] Connection done, let's create the database\n"));
 		// Connect it!, let's try to create database
 		sql = talloc_asprintf(mem_ctx, "CREATE DATABASE %s", db);
 		if (mysql_query(*conn, sql) != 0 || mysql_select_db(*conn, db) != 0) {
-			DEBUG(0, ("Can't connect to mysql using %s\n", connection_string));
+			DEBUG(0, ("[MYSQL] Can't connect to server using %s, error: %s\n",
+				  connection_string, mysql_error(*conn)));
+			mysql_close(*conn);
 			*conn = NULL;
 			goto end;
 		}
 	}
+
 connected:
 	// This entries will never be deallocated
 	entry = talloc_zero(talloc_autofree_context(), struct conn_v);
@@ -162,10 +228,11 @@ connected:
 	entry->conn = *conn;
 	// Store the new connection in our table
 	if (!htable_add(&ht, hash_string(connection_string), entry)) {
-		DEBUG(3, ("MYSQL ERROR adding new connection to internal pool of connections\n"));
+		DEBUG(0, ("[MYSQL] ERROR adding new connection to internal pool of connections\n"));
 	} else {
-		DEBUG(3, ("MYSQL Stored new connection %"PRIu32"\n", hash_string(connection_string)));
+		DEBUG(3, ("[MYSQL] Stored new connection %"PRIu32"\n", hash_string(connection_string)));
 	}
+
 end:
 	talloc_free(mem_ctx);
 	return *conn;
