@@ -1,0 +1,2 @@
+#!/bin/bash
+./crash-retrace.sh -gv ~/Downloads/$1_usr_sbin_samba.0.crash.gz

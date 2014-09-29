@@ -435,13 +435,20 @@ static enum mapistore_error mysql_record_allocate_fmid(struct indexing_context *
 	return mysql_record_allocate_fmids(ictx, username, 1, fmidp);
 }
 
-
 static int mapistore_indexing_mysql_destructor(struct indexing_context *ictx)
 {
-	MYSQL *conn = ictx->data;
-	if (conn) {
-		mysql_close(conn);
+	if (ictx && ictx->data) {
+		MYSQL *conn = ictx->data;
+		if (ictx->url) {
+			DEBUG(5, ("[%s:%d] Destroying indexing context `%s`\n",
+				  __FUNCTION__, __LINE__, ictx->url));
+		} else {
+			DEBUG(5, ("[%s:%d] Destroying unknown indexing context\n",
+				  __FUNCTION__, __LINE__));
+		}
+		release_connection(conn);
 	}
+
 	return 0;
 }
 
@@ -478,6 +485,7 @@ _PUBLIC_ enum mapistore_error mapistore_indexing_mysql_init(struct mapistore_con
 	ictx->data = create_connection(connection_string, &conn);
 	talloc_set_destructor(ictx, mapistore_indexing_mysql_destructor);
 	MAPISTORE_RETVAL_IF(!ictx->data, MAPISTORE_ERR_NOT_INITIALIZED, ictx);
+
 	if (!table_exists(conn, INDEXING_TABLE)) {
 		DEBUG(3, ("Creating schema for indexing on mysql %s\n",
 			  connection_string));
@@ -487,9 +495,9 @@ _PUBLIC_ enum mapistore_error mapistore_indexing_mysql_init(struct mapistore_con
 		schema_created = create_schema(MYSQL(ictx), schema_file);
 		talloc_free(schema_file);
 
-		MAPISTORE_RETVAL_IF(!schema_created, MAPISTORE_ERR_NOT_INITIALIZED, ictx);
+		MAPISTORE_RETVAL_IF(schema_created != MAPISTORE_SUCCESS,
+				    MAPISTORE_ERR_NOT_INITIALIZED, ictx);
 	}
-
 
 	/* TODO: extract url from backend mapping, by the moment we use the username */
 	ictx->url = talloc_strdup(ictx, username);

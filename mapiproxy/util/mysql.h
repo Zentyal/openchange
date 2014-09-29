@@ -26,6 +26,7 @@
 #include <talloc.h>
 #include <stdbool.h>
 #include <gen_ndr/exchange.h>
+#include "mapiproxy/libmapistore/mapistore_errors.h"
 
 #define THRESHOLD_SLOW_QUERIES 0.25
 #define _sql(A, B) _sql_escape(A, B, '\'')
@@ -39,10 +40,11 @@ enum MYSQLRESULT select_first_string(TALLOC_CTX *, MYSQL *, const char *, const 
 enum MYSQLRESULT select_first_uint(MYSQL *conn, const char *sql, uint64_t *n);
 
 bool table_exists(MYSQL *, char *);
-bool create_schema(MYSQL *, char *);
+enum mapistore_error create_schema(MYSQL *, const char *);
 bool convert_string_to_ull(const char *, uint64_t *);
 
 MYSQL* create_connection(const char *, MYSQL **);
+void release_connection(MYSQL *);
 
 enum MYSQLRESULT { MYSQL_SUCCESS, MYSQL_NOT_FOUND, MYSQL_ERROR };
 

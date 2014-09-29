@@ -2159,11 +2159,14 @@ static const char **get_folders_names(TALLOC_CTX *parent_ctx,
 	char			*table, *sql, *short_locale;
 	const char		**ret;
 	struct StringArrayW_r	*results;
+	MYSQL			*conn;
 
 	mem_ctx = talloc_named(NULL, 0, "get_folders_name");
 	if (!mem_ctx) return NULL;
 	table = talloc_asprintf(mem_ctx, "provisioning_%s", type);
 	if (!table) return NULL;
+	conn = self->data;
+	if (!conn) return NULL;
 
 	short_locale = talloc_memdup(mem_ctx, locale, sizeof(char) * 3);
 	if (!short_locale) return NULL;
@@ -3621,9 +3624,9 @@ static const char *openchangedb_data_dir(void)
 static int openchangedb_mysql_destructor(struct openchangedb_context *self)
 {
 	DEBUG(3, ("Destroying openchangedb mysql context\n"));
-	if (conn != NULL) {
-		mysql_close(conn);
-		conn = NULL;
+	if (self != NULL && self->data != NULL) {
+		MYSQL *conn = self->data;
+		release_connection(conn);
 	}
 	return 0;
 }
@@ -3706,6 +3709,7 @@ enum MAPISTATUS openchangedb_mysql_initialize(TALLOC_CTX *mem_ctx,
 	// Connect to mysql
 	oc_ctx->data = create_connection(connection_string, &conn);
 	OPENCHANGE_RETVAL_IF(!oc_ctx->data, MAPI_E_NOT_INITIALIZED, oc_ctx);
+	talloc_set_destructor(oc_ctx, openchangedb_mysql_destructor);
 	if (!table_exists(oc_ctx->data, "folders")) {
 		bool schema_created;
 		DEBUG(0, ("Creating schema for openchangedb on mysql %s\n",
@@ -3718,8 +3722,8 @@ enum MAPISTATUS openchangedb_mysql_initialize(TALLOC_CTX *mem_ctx,
 		schema_created = create_schema(oc_ctx->data, schema_file);
 		talloc_free(schema_file);
 
-		OPENCHANGE_RETVAL_IF(!schema_created, MAPI_E_NOT_INITIALIZED,
-				     oc_ctx);
+		OPENCHANGE_RETVAL_IF(schema_created != MAPISTORE_SUCCESS,
+				     MAPI_E_NOT_INITIALIZED, oc_ctx);
 	}
 	talloc_set_destructor(oc_ctx, openchangedb_mysql_destructor);
 	*ctx = oc_ctx;
