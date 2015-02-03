@@ -1,0 +1,13 @@
+usr/lib/*/libmapiserver.so.*
+usr/lib/*/openchange/dcerpc_mapiproxy_server
+usr/sbin/openchange_newuser
+usr/sbin/openchange_neworganization
+usr/sbin/openchange_provision
+usr/share/samba/setup/AD/*.ldif
+usr/share/samba/setup/AD/prefixMap.txt
+usr/share/openchange/upload-crash-report.py
+usr/share/openchange/setup/openchangedb/openchangedb_schema.sql
+usr/lib/python*/dist-packages/openchange/*.py
+usr/lib/python*/dist-packages/openchange/web/*.py
+usr/lib/python*/dist-packages/openchange/web/auth/*.py
+usr/lib/python*/dist-packages/openchange/utils/*.py
