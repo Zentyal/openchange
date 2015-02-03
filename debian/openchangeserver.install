@@ -7,6 +7,7 @@ usr/share/samba/setup/AD/*.ldif
 usr/share/samba/setup/AD/prefixMap.txt
 usr/share/openchange/upload-crash-report.py
 usr/lib/python*/dist-packages/openchange/*.py
+usr/lib/python*/dist-packages/openchange/migration/*.py
 usr/lib/python*/dist-packages/openchange/web/*.py
 usr/lib/python*/dist-packages/openchange/web/auth/*.py
 usr/lib/python*/dist-packages/openchange/utils/*.py
