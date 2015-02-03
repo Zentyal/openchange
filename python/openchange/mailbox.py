@@ -302,24 +302,18 @@ class MysqlBackendMixin(object):
 
     def _parse_mysql_url(self):
         # self.url should be mysql://user[:passwd]@some_host[:port]/some_db_name
+        if not self.url.startswith('mysql://'):
+            raise ValueError("Bad connection string for mysql: invalid schema")
 
-        conn_string_match = re.match(r'mysql://(?P<user>.*?)(|:(?P<password>.*?))@(?P<host>.*?)(|:(?P<port>[0-9]+))/(?P<db>.*)',
-                                     self.url)
-        if conn_string_match is None:
-            exc_str = "Bad connection string for mysql: "
-            if not self.url.startswith('mysql://'):
-                exc_str += "invalid schema"
-            else:
-                missing_str = None
-                if '@' not in self.url:
-                    missing_str = '@'
-                elif '/' not in self.url:
-                    missing_str = '/'
-                exc_str += "expected format mysql://user[:passwd]@host/db_name"
-                if missing_str:
-                    exc_str += ". Missing: " + missing_str
-            raise ValueError(exc_str)
+        if '@' not in self.url:
+            raise ValueError("Bad connection string for mysql: expected format "
+                             "mysql://user[:passwd]@host/db_name")
 
+        if '/' not in self.url:
+            raise ValueError("Bad connection string for mysql: expected format "
+                             "mysql://user[:passwd]@host/db_name")
+
+        conn_string_match = re.match(r'mysql://(?P<user>.*?)(|:(?P<password>.*?))@(?P<host>.*?)(|:(?P<port>[0-9]+))/(?P<db>.*)', self.url)
         m_dict = conn_string_match.groupdict()
 
         passwd = m_dict['password']

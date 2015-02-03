@@ -955,6 +955,17 @@ def openchangedb_fake_migration(lp, uri, target_version):
         print "Only OpenchangeDB with MySQL as backend has migration capability"
 
 
+def openchangedb_fake_migration(lp, uri, target_version):
+    if uri is None:
+        uri = openchangedb_url(lp)
+    if uri.startswith('mysql'):
+        openchangedb = mailbox.OpenChangeDBWithMysqlBackend(uri)
+        if openchangedb.fake_migration(target_version):
+            print "%d is now the current version" % target_version
+    else:
+        print "Only OpenchangeDB with MySQL as backend has migration capability"
+
+
 def openchangedb_provision(names, lp, uri):
     """Create the OpenChange database.
 
