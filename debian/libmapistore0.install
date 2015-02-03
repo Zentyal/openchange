@@ -1,4 +1,2 @@
 usr/lib/*/libmapistore.so.*
 usr/share/openchange/setup/mapistore/mapistore_namedprops.ldif
-usr/share/openchange/setup/mapistore/named_properties_schema.sql
-usr/share/openchange/setup/mapistore/indexing_schema.sql
