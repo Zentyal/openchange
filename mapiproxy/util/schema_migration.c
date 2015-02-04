@@ -43,8 +43,9 @@ static int migrate_schema(const char *connection_string, const char *schema_back
         PyObject *py_func = NULL;
         PyObject *py_ret_value = NULL;
         PyObject *mailbox_obj = NULL;
-        int      retval = 0;
+        int      another_init, retval = 0;
 
+        another_init = Py_IsInitialized();
         Py_Initialize();
 
         mailbox_mod = mailbox_module();
@@ -101,7 +102,9 @@ end:
         Py_XDECREF(py_args);
         Py_XDECREF(mailbox_obj);
         Py_DECREF(mailbox_mod);
-        Py_Finalize();
+        if (!another_init) {
+                Py_Finalize();
+        }
         return retval;
 }
 
