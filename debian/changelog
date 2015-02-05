@@ -1,0 +1,1522 @@
+openchange (3:2.3-zentyal7) trusty; urgency=medium
+
+  [ Andrew Fuller ]
+  * [b221c2] Enable async notifications.
+  * [484ff2] Declare variables at the top, as requested.
+
+  [ Jesús García Sáez ]
+  * [3ca571] openchangedb logger test: remove printf
+  * [e7032e] openchangedb: fix message_set_properties for some properties
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [123069] Allow organization deprovision
+
+  [ Javier Amor García ]
+  * [e90960] Add check option to openchange_provision
+
+  [ Jelmer Vernooij ]
+  * [9cdb12] Change openchangedb default to nothing, and require users specify 'ldb' for the ldb backend.
+  * [400434] In provision, require explicit setting to 'ldb' for openchangedb backend.
+  * [453a0c] Error on unknown OpenChangeDB backend.
+  * [5456ea] Use an openchange-owned PPA, so other people can also upload new packages.
+  * [e8d529] Require passing backend into openchangedb_provision; use ldb backend in provision test.
+
+  [ Enrique J. Hernández Blasco ]
+  * [d382f9] Do not crash on incorrect GLOBCNT range sent by client
+  * [a13466] Reset synccontext when the sent cn is greater than expected
+
+  [ Samuel Cabrero ]
+  * [f09f82] Notification service implementation based on RabbitMQ
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 27 Jan 2015 08:49:25 +0100
+
+openchange (3:2.3-zentyal6) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [01d596] nspi: refactor bind method
+  * [a773ac] nspi: bind method must not free global emsabp_tdb_ctx
+  * [37ecd9] indexing: fmid as string in sql queries
+
+  [ José Antonio Calvo ]
+  * [fdd9d8] Include openchange_user_cleanup.py in packaging
+
+  [ Javier Amor García ]
+  * [517da3] When provisioning send schemas additions to schema master
+  * [e723ad] Allow use Windows server as schema master
+  * [095661] Fixed Makefile to take into account update_now.ldif
+
+  [ Andrew Fuller ]
+  * [ee6db8] [libmapi++] Fix segfault when login() fails.
+
+  [ Enrique J. Hernández Blasco ]
+  * [8ae145] Move openchangedb table init log level to 5
+  * [ca1113] Parsing One-Off EntryID structure
+  * [7f7f31] Checking talloc return value for OOM errors
+
+  [ Julien Kerihuel ]
+  * [8b061a] - Add a tool to dump packed ROPs buffer which depends on a context (e.g. property tags in request and buffer in reply) - Add a function to get a SPropValue array from a DATA_BLOB given a specific offset
+  * [254051] Add rpcextract tool to repository.
+  * [dd332f] Add libpcap-dev to travis-ci
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Thu, 08 Jan 2015 11:38:31 +0100
+
+openchange (3:2.3-zentyal5) trusty; urgency=medium
+
+  [ Jelmer Vernooij ]
+  * [6069f8] Remove prototypes already defined by flex.
+  * [01123e] Remove outdated howto, replace by a link to the cookbook.
+
+  [ Jesús García Sáez ]
+  * [7b61eb] openchangedb_logger: remove unused function
+  * [fd0b7e] removed openchange_get_mailboxDN, not used
+  * [f842e9] emsmdb: remove smb_panic calls, no need to crash
+  * [6a653d] nsp: remove smb_panic calls, no need to crash
+  * [f7345d] add OC_ABORT macro, no critical
+
+  [ Enrique J. Hernández Blasco ]
+  * [3b2b70] Fix Autodiscover when Display Name has UTF8 chars
+  * [2a291b] Fix memory leak in oxcprpt
+  * [a1f2ca] Fix minor leak when we cannot create a mapistore backend context
+  * [d2b4e0] Fix parsing client_address RTS command in RPC/HTTP Proxy
+  * [aee699] Pass RTS RPC commands from IN to OUT channel in RPC/Proxy
+  * [4a3cc9] Implement naive flow control in IN channel for RPC/Proxy
+  * [03b36f] Be more pep8 complaint
+  * [29726e] RTS cookies are transmitted using little endian
+  * [80324c] Only RPC PDUs are subject to flow control
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [8c6cad] Return valid HTTP response when more data is needed
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 09 Dec 2014 08:41:01 +0100
+
+openchange (3:2.3-zentyal4) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [84ea87] imported openchange_user_cleanup script from old version
+  * [52341f] user_cleanup_script updated for mysql backends
+  * [dc2a71] openchange_user_cleanup: pretty format and --ignore=sogo|openchange|imap option
+  * [5c87d1] openchange_user_cleanup: typo in help
+  * [489eb4] openchange_user_cleanup: change regexp format to get connection strings
+  * [896a89] openchange_user_cleanup: ignore default to empty list
+  * [112cb5] openchange_user_cleanup: enable autocommit
+  * [89caaa] openchange_user_cleanup: drop sogo table instead of truncate data
+  * [59c5e8] removed unnecessary null check conditions to free pointers
+  * [cabf6c] Fix memory leak in mapistore_indexing_record_add_fmid
+  * [52bdd5] talloc_named -> talloc_new
+
+  [ Enrique J. Hernández Blasco ]
+  * [6e83fd] Use DLIST macro whenever possible
+  * [74ea84] Use new 4.0 old repo to retrace old crashes
+  * [1d5d4b] Fix #CR-633 in oxcfxics on folder change
+  * [db7d8f] CR-131 and CR-50: Fix sync FAI messages when Only Specified Properties is set at RopSyncConfigure
+  * [283d47] Add a mapitest to crash on ModifyRecipients
+  * [0f6f5b] Fix CR-657: RecipientRow prop number is lower than ModifyRecipientsROP prop count
+
+  [ Samuel Cabrero ]
+  * [770587] Fix memory leak mysql result not freed
+  * [53bf95] Fix memory leak in mapistore_backend_get_path
+  * [8ee0e2] Ensure mysql result pointer is valid only when returning MYSQL_SUCCESS
+
+  [ Jelmer Vernooij ]
+  * [a6500e] s/openchange.ldb/OpenChange database/, since this condition can also occur with the MySQL backend.
+  * [b70940] Print an error when no mapistore backends are available.
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 25 Nov 2014 10:32:08 +0100
+
+openchange (3:2.3-zentyal3) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [fdb285] Move 4.0 to stable
+  * [23dee1] Do not try backup apport configuration when running with gdb
+  * [3a1f66] Adding more info to duplicates
+  * [70c4f1] Give support to reopen an issue if it is closed when adding a duplicate
+  * [09f71f] Set prev when splitting a range on deletion
+
+  [ Kamen Mazdrashki ]
+  * [516d88] openchangedb: Impelement Logger module
+  * [92cb8f] openchangedb: Load openchangedb_logger module based on config option
+  * [f6223f] test: Fix OpenchangeDB logger test to reset stats on every test
+  * [2b751e] test: Add 'debuglevel' and 'option' command line options
+  * [f1d4ef] test: Avoid ck_assert_int_xx() macro side effect in older 'check' versions
+
+  [ Julien Kerihuel ]
+  * [8eb0f2] Reset table cursor to the beginning of the table across Restrict calls as stated in [MS-OXCTABL] 3.2.5.4 Processing RopRestrict: "When this ROP is sent, the server MUST invalidate all current bookmarks (2) of the table and MUST move the cursor position to the beginning of the table."
+
+  [ Jesús García Sáez ]
+  * [d181e6] openchangedb: transactions on create_folder and set_folder_properties
+  * [cc494b] openchangedb: ignore ChangeNumber property when setting folder properties
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 11 Nov 2014 12:35:34 +0100
+
+openchange (3:2.3-zentyal2) trusty; urgency=medium
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [32019b] Add organization provision support
+  * [70044e] Add openchange_neworganization script
+  * [1a7cea] Fix proxyAddresses field for users provisioned with full address
+  * [663188] Add provision_neworganization script to install files
+  * [80aa2e] Fix crash-retrace.sh for paths with spaces
+
+  [ Jesús García Sáez ]
+  * [6ec0d7] multitenancy: sql schema changes
+  * [80865e] multitenancy: adapt provision to new sql schema
+  * [e8543d] fix unittest after sql schema changes
+  * [90b200] multitenancy: new test_suite clone of old one
+  * [7a8a8c] multitenancy: modified functions where we have all parameters needed
+  * [b8ee0c] refactor style of sql
+  * [e8c0f4] multitenancy: set ou_id when creating a mailbox
+  * [ba6aef] multitenancy: get_PublicFolderID/get_PublicFolderReplica
+  * [8f8473] Destroy mysql connection when context is freed
+  * [983ccf] use constant for username in unittest
+  * [afff72] multitenancy: changeNumbers functions
+  * [21adbd] multitenancy: unittest with new user
+  * [f137ad] multitenancy: EssDN as parameter to provisioning function
+  * [a24cb2] multitenancy: lower length of fields to be able to have an unique index
+  * [ac9a24] multitenancy: when provision new organization create additional server
+  * [99ebf8] multitenancy: mysql migration
+  * [c35d79] multitenancy: update openchangedb when adding a new organization
+  * [97bed4] fetch organizational unit properly
+  * [062929] select db before performing any request
+  * [04ad0b] multitenancy: refactor emsmdbp_mailbox_provision making fetch_organizational_units function public
+  * [1ed147] multitenancy: adapt fucntions searching for either org or group
+  * [12818f] multitenancy: abort organization provisioning when already exists or something went wrong
+  * [cf8d21] unnecessary rmdir on make clean
+  * [bf2576] multitenancy: X400 addresses
+  * [ec2b06] multitenancy: nspi support
+  * [d34ff8] typo keyname
+  * [0c6915] multitenancy: fixed typo legazyExchangeDN -> legacyExchangeDN
+  * [8a42dc] emsmdbp_object: sanity and error checks
+  * [10787f] nspi: fix DCESRV_NSP_RETURN macro
+  * [ba7386] npsi: sanity checks on dcesrv_NspiResolveNamesW/dcesrv_NspiResolveNames
+  * [17d031] nspi: more checks not enough memory
+  * [24175a] oxcfxics: checks around oxcfxics_check_cnset
+  * [f8c0e7] emsmdbp: sanity checks
+  * [6788b3] openchangedb: sanity checks
+  * [1a3266] openchangedb: coding style, checks and minor refactoring
+  * [2ae2e9] added openchanserver postinst script to migrate mysql database for older installations
+  * [5c6ffc] make: mapistore_test needs to link against libmapi.so
+  * [fe3770] openchangedb/indexing: change error returned
+  * [bb46b4] openchange postinst, ignore output
+  * [91a7b5] Escape ldap filters with strings properly
+  * [4789ee] openchanget postinst: return true always
+  * [083db0] remove temporaly fail missing
+  * [b361bd] add ccan source and headers under  mapiproxy/util
+  * [f13fcc] mysql: cache of connections
+  * [4d23e8] coding style in RETVAL_IF macros
+  * [95543f] coding style: use more meaningful variable name
+  * [26f8c7] testsuite: more check parse_connection_string with port
+  * [97c459] util-mysql: remove mapistore dependecy
+  * [e898f3] util-mysql: remove mapistore dependecy
+  * [63fce9] oxcfxics: fill_transfer_state_arrays return ok when no content
+  * [853416] mapitest: 1863 use username with oc account
+  * [ec336d] nspi queryrows: fix bad NumPos input
+  * [c57f4f] util/mysql: set reconnet option before real_connect
+
+  [ Samuel Cabrero ]
+  * [68afe4] Packaging for openchange notification daemon
+  * [8b0e37] Notification service implementation based on RabbitMQ
+  * [5f6489] Allow to specify the user email address as a parameter
+  * [ae210b] Add new parameter documentation
+
+  [ Enrique J. Hernández Blasco ]
+  * [70ee4c] Give support to lists as configuration value in OCSManager
+  * [c4f89b] Added new conf options to tune Autodiscover service
+  * [7b96dd] The implementation for tuning Autodiscover conf
+  * [aecf52] Added copyright note for OOF module
+  * [73178c] Fix the SIEVE script when it was enabled/disabled
+  * [fa697d] Refactor to make possible to have several backends to put the Sieve script
+  * [5dfdb1] Make it work with curl for easing the testing
+  * [b1379f] Now it is working if there is already an active script
+  * [2a5999] ManageSieve backend for Out-of-Office implemented
+  * [809a0c] Keep the user_script in settings file
+  * [52aaee] Make multitenancy work checking the samba conf key
+  * [224415] Fix getting the param properly
+  * [f350da] Fix in ManageSieve backend when there is no active script
+  * [ad117b] Include new dep for oof service
+  * [c0f717] Settings are stored in the script inline
+  * [1b6dcf] Minor changes after proper review
+  * [422929] Added wrapper to SamDB to reconnect on search exception
+  * [c29756] Choose the apport configuration based on a Package
+  * [a67b38] Added sample for apport-config.proposed
+  * [75a1ef] Fix wrong proposed conf
+  * [cb7979] Fix OOF file backend when no SIEVE scripts are there
+  * [43855a] Add free/busy permissions
+  * [505b64] lzfu: Do not add \0 twice at the end of RTF uncompressing
+  * [2f73bd] 4.0 is the new proposed version
+  * [9841ff] Give support to update a stacktrace by retracing
+
+  [ Julien Kerihuel ]
+  * [4bb608] Fix GetMessageStatus response IDL
+  * [17abff] Add stub server implementation for GetMessageStatus
+  * [a3dbf2] Add small script to dump last network packet from gdb
+  * [86dc40] Fix from Chenglin Zhong: mapistore_message_modify_recipients is improperly invoked
+  * [a6fa3b] Add a script to wipe *every* openchangedb entries for a given user. Helpful when you want to start over with the same user and have a clean and fresh mailbox
+  * [e1dbd7] Check for tainted username Exit if openchangedb mysql uri is not set
+  * [cc63b3] Fix ReadStream failure operation when BufferSize is set to 0xBABE in the request and MaximumByteCount value (uint32_t) overflows sizeof (uint16_t)
+  * [12b295] Prevent RAWIDSET_push_guid_glob from crashing when last_glob_idset remains uninitialized after initial call to RAWIDSET_find_by_GUID.
+  * [93e4a1] Add -Wpointer-sign to CFLAGS to ensure we don't get confused between uint64_t and int64_t.
+  * [49b996] Initialize ret and prevent from returning uninitialized pointer leading to crash
+
+  [ Jelmer Vernooij ]
+  * [038248] Add missing cleanup for some po files.
+
+  [ Kamen Mazdrashki ]
+  * [e45e69] build: remove artifacts from libmapiproxy/backend build in make clean
+  * [dfc21b] testsutie: Add testsuite for mapiproxy/util/mysql
+  * [ed05de] mapiproxy/mysql: Reractor parse_connection_string() to be more stable
+  * [06c7d2] mapiproxy/mysql: Call mysql_options() after connection is established
+  * [0d7b3a] testsuite: Make compiler happy and initialize local variable before it's used
+  * [3cdd8c] testsuite: Small README how to use unit test utility
+  * [59fc34] testsuite: Don't use ck_assert_ptr_eq() - travis can't handle this yet
+  * [7462c7] testsutie: Handle command line options for openchange-testsuite tool
+  * [cd6949] openchangedb/mysql: Avoid leaking talloc context in case of failure
+  * [ec6699] openchangedb/mysql: Avoid mem leaks in message_set_properties
+  * [953672] testsuite: Initialize g_mem_ctx during test case setup
+  * [7fd318] indexing/mysql: Fix memory leak in mysql_record_allocate_fmids()
+  * [bd5418] testsuite/indexing: Remove not needed memory context which end up leaked after all
+  * [c151d9] namedprops/mysql: Fix memory leak in next_unused_id()
+  * [c95014] namedprops/ldb: Use talloc_new() to allocate local context
+  * [788f08] testsuite/namedprops/ldb: Fix the test suite not to bleed memory
+  * [5f1466] test/openchangedb: use talloc_new() - much easier to track down memory leaks
+  * [90852b] test/namedprops: Use talloc_new() for local memory contexts
+  * [08f08a] testsuite: Update README.md with leak report info
+  * [c11f7f] testsuite: Allocate global memory context under autofree context
+  * [08b6b2] test/namedprops: Don't use lpcfg_load_defaul() directly
+  * [f1f626] Introduce mapistore_tool to be able fetch mapistore(SOGo) info directly
+  * [4881a9] build: Always use CFLAGS after PYTHON_CFLAG so we can override from command line
+  * [00e53f] dmsmdbp_object: emsmdbp_folder_get_folder_count() to return MAPISTATUS
+  * [19da6e] oxctabl: Remove unnecessary initialization - row blow is already initalized
+  * [46001b] emsmdbp_object: Check both PR_DISPLAY_NAME_UNICODE and PR_DISPLAY_NAME for folder Display Name
+  * [bf4366] emsmdbp: Fix PidTagSourceKey creation for a message - messageID should be used
+  * [138e89] emsmdb: Remove folderID field from emsmdbp_object_message - not used anywhere
+  * [1fe837] provosition/mailbox: Don't lowercase Organization and OU names for Free/Busy provision
+  * [5a4c40] openchangedb: get_parent_if() should return error when input fid is not found
+  * [b35ac8] build/mapistore tools: Remove dependency in build line for libmapi.so
+  * [e76736] packaging: Disable gcc optimizations and enable debug info
+  * [8d10e2] test/util/mysql: Print out MySQL error when mysql_real_connect() fails
+  * [3f361c] test/common: Allow for MySQL password to be passed in environment
+  * [130c59] util/mysql: Avoid leaking MYSQL object in case of failure
+  * [def0a8] testsuite: Update README - remove memory leaks already fixed
+  * [388b4b] util/mysql: Print MySQL specific error also in case of mysql_query() failure
+  * [8b7a83] indexing: Fallback to default_indexing_url in case we have no indexing_url stored for the user
+  * [05d54b] openchangedb/indexing: Handle indexing url validation in openchangedb layer
+  * [5b3a52] oxcstor/RopLogon: Explicitly check for MAPISTATUS code
+  * [9bf46d] oxcstor/RopLogon: Verify EssDN for public logons
+  * [2253ff] emsmdbp/mailbox_init: Alwasy popoulate mailbox_object object
+  * [d700cc] oxcmsg: Implementation for partial UserDNs in ModifyRecipients call
+  * [6bd4e0] oxcmsg: Resolve x500dn back to sAMAccountName due to SOGo limitations atm
+  * [bf9023] emsmdbp/table_get_row_props: Check for OOM
+  * [50d3cf] emsmdbp/table_get_row_props: test retvals as mapistore_error value
+  * [1dbebf] oxcfxics: Prototype oxcfxics_fill_transfer_state_arrays() to return status code
+  * [a3f84d] oxcfxics: Check for errors in oxcfxics_fill_transfer_state_arrays() and handle accordingly
+  * [b0fe9f] emsmdbp_object: Return MAPISTATUS and check for distinct error types
+  * [82f64a] emsmdbp_object: emsmdbp_object_open_folder_by_fid() to return MAPISTATUS
+  * [42caf1] oxcfxics: Check for table_set_columns() errors in oxcfxics_push_messageChange_attachments
+  * [4c2f0c] oxcfxics/SyncImportHierarchyChange: Fix MAPISTATUS error handling
+  * [bdd597] oxcfxics/SyncImportMessageMove: Handle MAPISTATUS error and print out the error
+  * [48f253] provisioning: Print out more descriptive failure when LocalFree busy create fails
+  * [934c1c] oxcstor/Logon_Mailbox: OPENCHANGE_RETVAL_IF() expect bool as a flag - fix that
+  * [c3b7b5] oxcfxics: Fix memory context allocation check
+  * [5edf1e] oxomsg/handle_message_relocation: Use MAPISTATUS to check for errors instead of mapistore_error
+  * [53c0da] oxcfxics: Relax error checking a bit to restore previous behavior
+  * [fb590d] provisioning: Get back to print function name and fix double __LINE__ printing
+  * [6b7e02] oxcfxics: Fix log message typo
+  * [d1647a] mgmt_messages: Fix wron error type - mapistore_error is expected
+  * [8a25fb] mapicode: Fallback to code without MAPI_STATUS_IS_ERR() macro usage
+  * [1effae] mapicode: Comment out MAPI_STATUS_IS_ERR - not to be used anymore
+  * [acd062] mapicode: Replace usages of MAPI_STATUS_IS_OK() with direct check
+  * [c1e44f] libmapi: Check NTSTATUS status directly rather than map it to MAPISTATUS
+  * [302b34] mapicode: Comment out MAPI_STATUS_IS_OK - not used anymore
+
+  [ Javier Amor García ]
+  * [3ca10c] Make ocsmanager configuration query for firstorg and firstou instead of using hardcoded values
+  * [a8beed] styles fixes as blaxte suggestions
+  * [eb080b] Added oab functionality to ocsmanger. For now it returns a empty address book
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Mon, 27 Oct 2014 11:45:21 +0100
+
+openchange (3:2.3-zentyal1) trusty; urgency=medium
+
+  [ Javier Amor García ]
+  * [3fa651] firrst steps to php extension
+  * [8f05c4] changed extension name to mapi
+  * [26c61d] prinmt profiles function
+  * [e92c65] dunmp profile
+  * [dc26f7] cleanup, add example.php
+  * [de7d24] added initlaize_mapi helper function
+  * [488ad5] dump profile return php hash
+  * [8a2020] print_profiles replaced with profiles method
+  * [12ac1e] profile name parameter to dump_profile
+  * [2003c3] rmeoved hello_mapi function
+  * [1633a7] class skeleton, const char pointer casts
+  * [45257a] converted functions to class methods
+  * [17d66c] parametized build ocnfiguration
+  * [aa7506] changed texts
+  * [1943ab] sttore profdb path in attribute
+  * [0f92fa] indent fixes
+  * [e323c1] uninitialize mapi contexts
+  * [f472ec] storing/retrieveing mpai context but losign seesssion
+  * [f6c928] one mapi_ctx for all methods
+  * [93091f] aadde destructor
+  * [c84324] removed idle line
+  * [06f5f8] print folder
+  * [cb5566] first version of get folders, segmentation fault
+  * [581b99] cosmetic fixes in config.m4
+  * [76f7ae] better format, segfault porblem
+  * [2962b3] fix stupid error when recovering child folders
+  * [2bba37] reformat
+  * [240001] dont allocate memory for exchange_version use a literal string which will be duplicated by vector helper functions
+  * [f5dc0c] ge folders by profile name
+  * [855057] header and ocde clenaup
+  * [d5cfc1] indent change
+  * [0141b9] factorized out init_message_store function, skeleton for fetchmail method
+  * [0cf917] extracted init_message_store function
+  * [4186f8] name change MAPI -> MAPIProfileDB
+  * [f05e13] creted class MAPIProfile
+  * [63dbc3] MAPIPROfile methods to its own file
+  * [5dd791] propfile_db moved to its own file
+  * [f2b655] MapiProfileDB->profiel returns a object profile
+  * [1b8c3b] mapi session class skeleton
+  * [58c730] removed idle vars
+  * [0c3b8d] moved more code to header files, beginning to pass parent objects
+  * [b8131b] removed some debug code
+  * [cd2ba8] moving fodlers method to session, problems retrieving session resource
+  * [e62181] folders in sesion object
+  * [87f228] worthless fetchmail implemntation
+  * [3eb851] return messages as array
+  * [62956c] retrieve boody too
+  * [3f2b7d] added wokraround to child folders problem
+  * [5c272c] added and first used  object_talloc_ctx
+  * [68c802] using object_talloc_ctx when allocating talloc objects
+  * [d63b0e] factored out open_default_folder, silenced some warnings
+  * [269c97] removed inline open_default_folder code
+  * [e57df8] factored out open_user_mailbox
+  * [3001e6] hooked with fetch_object method from openclient
+  * [08d4c1] can get appointments
+  * [74b7ad] added CHECK_MAPI_RETVAL, clened a bit session code
+  * [dd4818] more cleanup
+  * [ebfe47] minor styles changes
+  * [f91bd9] mapi context now in internal structure
+  * [849fda] rename get_mapi_context to mapi_profile_db_get_mapi_context
+  * [ef4082] using internal structure in mapi profile
+  * [db78e5] removed session resource
+  * [40dcf2] remvoed talloc resoruce, troiuble with destructors
+  * [47371d] untangeld talloc contexts
+  * [8f3403] children control profile_db and profile
+  * [057966] chidlren managmenet finished
+  * [e935ac] remove deprecated extern declarations
+  * [f5f0b4] compile with tsrmls
+  * [727cf6] removed if dependent on undefined value
+  * [2b96d2] fixed memory leak in object dtor
+  * [7088c6] fixed memory leak in RETURN_ZVAL
+  * [d47f75] first show contact version
+  * [1e126d] fix id formatting
+  * [c661bb] rename open_default_folder to open_default_inbox_folder
+  * [2160b4] removed deprecated variable profile_rsource, chopped trailing whitespaces
+  * [e7c5bd] mailbox class now returns its name
+  * [e1cd57] added not implemented methods
+  * [3cd171] fist folder version
+  * [ae854a] folder objects for all item types
+  * [5b6fca] using IPM.X for types names
+  * [433c94] using IPF. classes instead of IPM. ones
+  * [436d6f] first version of mapi_contact, with memory lels
+  * [ffbd13] fixed return zval from openmessage
+  * [163392] fixed free_storeage method for classes
+  * [434dcb] renamed mem_ctx -> tallo_ctx
+  * [f6ba63] __set implemented without saving
+  * [819ff1] removed unused variables
+  * [33aeee] added mapi table base class
+  * [322c76] mapicontact is now a child class of mapimessage
+  * [1678f5] added suport for message task objects and PT_SYSTIME properties
+  * [65c493] using full property name in temporal values, too
+  * [eb955a] first version of summary from a message table
+  * [8861d6] summary for calendar
+  * [0e92b1] fixed mapi_message_table inheritance
+  * [956313] get n rows; probelms with parent folders in tables
+  * [c70e21] tested effectivity of holding references to parent object
+  * [7c57eb] fixes in tables destruction
+  * [37bde1] destruction problem almost solved (remains 1 leak if profile_db object is destroyed before end script)
+  * [b1aec2] first version of getmessages ,some free error
+  * [62e3db] add parent folder to message object
+  * [93500e] normalzied names, all parent struct method is called parent now
+  * [903182] bookmark: ref count propagation implemented
+  * [9b3445] added getName and getID to folder
+  * [5814b1] return null when trying to open inexistent message
+  * [16ac96] fixed code typo
+  * [eb51a4] added appointment object
+  * [15e663] mailbox php only tests mailbox.php
+  * [6f33b6] php_mapi.h
+  * [85cdb9] added openFolder method
+  * [0907ea] missing file
+  * [1007a8] disabled manipulation of ref count
+  * [75bdc0] first version of autogenrated constant, only pidlid and not integrated in buidl system
+  * [f3bf26] reverted half-backed changes in table
+  * [b4722b] reimplemente get properties to use directly constants
+  * [ebc9cf] more compact style
+  * [69b9c2] added getID to message classes
+  * [6cdb85] removed superfluous id member for folder store struct
+  * [a517f4] moved exampels php to its own dir
+  * [a7c940] better config.m4 file
+  * [f4c14d] get prop type from pop identifier in message
+  * [8135b8] new generated constants file
+  * [38f295] set /get in properties objects
+  * [7ee5b3] primitive save message
+  * [9503f7] drop temporally changed properties hash to simplify
+  * [290199] save for string works
+  * [e63f92] removed misleading comment
+  * [f1a597] some refactor
+  * [4e1d63] added debug method
+  * [457193] separated system dependent variables
+  * [b6efea] bring back parent/child relationship for profiles
+  * [c74f87] moved fill of store objhect to create_handler function like other classes
+  * [767466] added childrens to profile
+  * [0dfe3e] added parent/chidl relationship between profile in session
+  * [5acbd5] dependency children fodler <-> mailbox
+  * [17d139] parent/child folder/message
+  * [2fa3b5] removed save() arguemnt. Using parent mailbox instead
+  * [7476a8] begin to comment/remove dead code on mapi_session.c
+  * [bf1a77] added open_mode parameter to Folder::OpenMessage
+  * [045873] primitive newMessage method
+  * [cdb69c] removed chached message id for message boejct
+  * [a94f21] create message accepts proeprties but doesnot return a valid object
+  * [0552a8] adapted mapi_table to parent/children stuff
+  * [4ff618] createMessage now return correctly the message after a wrokaround
+  * [07962c] check mapi context in NAPIProfileDB constructor to avoid delayed errors
+  * [dd0da9] better incompaibilities type error message
+  * [983e4a] moved mapi_date to MAPIMessage class
+  * [a3598c] fixed type message table
+  * [7acbaa] disabled temporally child management macros
+  * [532ca3] factorized out mapi_folder_open_message, dirty fiel for changes in create_message_table_object
+  * [f36799] redoing messageTable , getMessages works
+  * [7e995d] half backed unfinished code, to review
+  * [d847ff] table.php example
+  * [9ecc8e] message table summary implemented
+  * [dce89e] renamed next_row_set -> mapi_table_next_row_set
+  * [dca5b9] uncommented example senteces, removed debug sttement
+  * [acad01] refactor
+  * [b8013d] first steps for mapi folder table
+  * [6feeff] revert change
+  * [86ea80] conversion betwee mapi PT_I8 and zval
+  * [b1c068] return mid in message table summary
+  * [aeb9a0] little adjust for memory problems when sisabled  children
+  * [206891] added get call examples
+  * [459721] get of multiple elements return prop id as keys
+  * [954013] removed debug statement
+  * [31f200] fixed typo in bad cast
+  * [e512c6] added getParentFolder method
+  * [6f5130] added getParentFolder method
+  * [d6c7c8] implemented folder table getFolders and summary method
+  * [070e09] refactored handling of mapi_folder_type_t
+  * [d82706] MAPIFolderTable is now aware of folders containment class
+  * [33ee5b] fixed double free in mapi_table dtor
+  * [f861a3] fixed regresion in get messages
+  * [88ede1] fixed leak in get method
+  * [bc7487] unsetting thigs in example
+  * [e2cbe5] removed old example script general.php
+  * [0fc621] check number of parameters in create message, must be apir
+  * [24b928] clear use of variables
+  * [8125d7] commented out superfluous setMAPIProps
+  * [546a59] comemnted out function to be reoved
+  * [02646a] using zval** inastea of zval** for args in multiple aprameter number
+  * [783f09] using zval** isntead of zval*** in message table
+  * [effce7] messages examples fixes
+  * [a96fbb] fixed call
+  * [17c461] better parameters validation
+  * [de2ba6] added deleteMessages method to folder
+  * [79effd] some clenaup
+  * [80fc9d] ded code cleanup
+  * [68f248] fixed two warnings
+  * [835085] typo fix
+  * [bc45c4] added MAPIMessage open mode constants
+  * [2c331f] fixed bad class constant name
+  * [fec169] bakcup commit
+  * [213bf8] extracted system variables
+  * [4725f0] separated system variables
+  * [f40dea] separated env variables
+  * [a86eba] starting to work in binary field
+  * [a4414f] adding missing declaration mapi_session
+  * [2025bc] some changes in set of properties
+  * [a9cc81] added getBodyContentFormat
+  * [1da400] clearer script
+  * [5a526a] cleare script
+  * [9a73ff] check reval of GetBestBody
+  * [fafe32] first steps for recurrence
+  * [ad6113] added libexchange2ical.h for rge reucrence
+  * [383f9c] removed innecesary ;
+  * [d5038a] up soruces to use temporally helpers for recurrence
+  * [23e274] do later annotations
+  * [d91fda] extracted mapi_profile_db_get_profile method
+  * [6597e8] return null when requested a inexistent profile
+  * [3fe94d] mapi porfile creation first steps
+  * [d3ba5d] extracted logon method
+  * [f209dd] cleanup
+  * [938f89] fixed exchange version
+  * [a9b2b4] testing php_log_err
+  * [25320f] removed php_printf
+  * [bd981b] reorganized variables
+  * [f16802] removed no longer needed dependency on libexchange2ical/exchange2ical_utils.c
+  * [151dac] fixed script appointment
+  * [dd78a4] request message properties now responsability of each class
+  * [8c49b5] setting of date
+  * [f3637b] settign date now use unix timestamp
+  * [978545] PT_SYSTIME returned as unix ts
+  * [1ac22c] fixed wrong count
+  * [268ac0] first version of attachment class ans attachment table
+  * [2dcb7f] misisng includes
+  * [97ffac] dump method
+  * [f0821f] dump method moved to base message class
+  * [b89fa5] some methods added for better attachment support
+  * [bfda2e] added getAsBase64
+  * [a86d94] modified some examples
+  * [54a713] appointmt recurrence script
+  * [50acdc] added setAsBase64 to message, save to attachment but it is disabled until backend supprots it
+  * [b8cfdc] removed dead code
+  * [605f35] dead code cleanup and typo fix
+  * [a83b7c] removed commented out code
+  * [cbd8f7] some reformat
+  * [b7bcca] infraestructura for open messages with property list
+  * [a392fc] removed dead code
+  * [173701] rename set_message_obj_prop ->  mapi_message_so_set_prop
+  * [aacd6c] begin conversion of examples to executable tests
+  * [0e7dd9] adaptesd simple-hierarchy.php
+  * [0af11c] using tests on create-get-profile
+  * [77039f] converted table.php example in test
+  * [531c42] renamed table.php -> message-table.php
+  * [be5c23] converted example to test
+  * [27e888] converted to test
+  * [05455f] fixed leak in removing messages function
+  * [f11d55] changes of test conversion
+  * [e71e8b] converted to test
+  * [249b3f] run tests script
+  * [80d4aa] workaround against dstruction issues
+  * [b769ba] disable appointment_recurrence test
+  * [bb44b5] inexistent message check
+  * [e27c13] fixed bug when retrieing a inexistent directory
+  * [a82ae0] name change
+  * [b0883a] add_SPropValue with correct count
+  * [2961a0] Commited forgotten files: removed blank lines and delete messafes with inexistent id test
+  * [458340] better LDB error reporting when creating a MAPIStore object
+  * [201b62] Added set/get PT_DOUBLE message properties
+  * [940dc9] set double properties with a long zval
+  * [bb3310] better tsk test
+  * [6fb032] array string implemented
+  * [80d7f2] first using exceptions
+  * [f26e99] missing file in the commit:  first using exceptions
+  * [828721] usign own exception class MAPIException
+  * [288047] package for sieve actions
+  * [1d8ccb] added vacatio ndependent on begin and end
+  * [0292b6] add help message
+  * [aef99d] copyng old file
+  * [52f0cc] clean debug
+  * [c27edd] less aggresive use of exceptions bz we need to assure that we dont let any unfree resource
+  * [1ce479] include old sieve script after the vacation commands
+  * [699f11] added unset sieve
+  * [2c02d3] dont make backup of our own vacation script
+  * [127f4a] avoid apache segfault when registering exception class
+  * [14df5e] bit of refactor
+  * [389f20] removed deprecated changelog
+  * [b2b379] Only do role usage where is more than one mapi server. Mailboxes usage checks are done in any case.
+  * [67c8a6] unified deprocision and full-deprovision
+  * [0ce8a9] removed ded code
+  * [9295d6] updated to use version 3 of the license
+  * [d6c290] removed dead code
+  * [85a65a] moved system specific configuration for php binding test to its own file
+  * [145afe] fixed OPENCHANGE_RETVAL_IF styles and removed trailing spaces
+  * [808c7d] remove dead code
+  * [76ccdd] using const char for sambd_connect_url call
+  * [86d8f3] using lpcg_sam_name as fallback to recover samdb_url
+  * [a985cc] Revert "using lpcg_sam_name as fallback to recover samdb_url" since it does not return a correct url
+  * [38d54d] fixed copyrights
+  * [242daa] unified copyright format
+
+  [ Julien Kerihuel ]
+  * [76b724] - Make use of libmapi system-wide headers rather than local ones - Fix php bindings compilation with PHP 5.4
+  * [54113c] - Fix coding style - Add Licensing headers to C files - Add some FIXME
+  * [3f874b] - More coding style fixes - Rename talloc_ctx structure field into mem_ctx - Add licensing to header files
+  * [3c759d] - Clean up reference and dependencies among header files
+  * [7fcfc4] Open Message in ReadWrite mode
+  * [ebe509] - Refactor mapi_message_types_compatibility - Fix return value check for mapi_message_types_compatibility - Call SetProps within set() routine
+  * [43a8c8] Cleanup the example to put the focus on set()
+  * [9a4b6f] Clean up the code
+  * [cf348c] Add gitignore file
+  * [73a49a] Fix compilation with samba release > 4.1.4 - use new API functions introduced to access opaque assoc_group_id
+  * [acd0c8] Remove 4.1.4 limitation when running make samba-git
+  * [f160e5] Fix compilation with samba release > 4.1.4 - use new API functions introduced to access opaque assoc_group_id
+  * [04f516] Remove 4.1.4 limitation when running make samba-git
+  * [04464c] Move libmysqlclient detection in configure.ac
+  * [041e1a] Merge Zentyal contribution: openchangedb and indexing refactoring + mysql backend
+  * [de1244] Merge Zentyal contribution: openchangedb and indexing refactoring + mysql backend
+  * [d52fef] Merge Zentyal contribution: openchangedb and indexing refactoring + mysql backend
+  * [963514] Fix additional implicit conversions between MAPISTATUS and mapistore_error enumerations
+  * [437c47] expose samdb_connect prototype
+  * [f31483] Fix mismatching enumeration usage + uninitialized variables
+  * [037da9] Fix uninitialized value
+  * [7f5821] Check mapistore folder modify permission retval and set retval accordingly
+  * [0c019a] Add debugging to track down potential mapistore failures in emsmdb code
+  * [957768] Replace the endless if-else if statement with an array lookup and a loop
+  * [39aba3] Change return value from boolean to enum mapistore_error to have larger choice than true/false in sanity checks.
+  * [7b49f6] debugging message over mapistore_init should not rely on retval
+  * [80cd0d] Add missing SQL schema file for openchangedb mysql backend
+  * [095475] install sql schema files for mapistore mysql backend
+  * [714f7d] Remove non needed memory allocation on LDB database string
+  * [6e9281] Move backend prefix definition to heir own header Add BEGIN_DECLS/END_DECLS defines
+  * [b24cb9] change next_unused_id prototype to return enum mapistore_error and pass highest_id by reference.
+  * [367ab3] Update change next_unused_id prototype and backends to match interface
+  * [e4cbc5] Add unit testing infrastructure skeleton
+  * [5d011c] Add check dependency to travis yaml file
+  * [9a6d45] Turn "check" library detection from required to optional
+  * [e9afc7] add MAPISTORE_ERR_INVAliD_URI mapistore error
+  * [960adf] - Move away from URL to parametric options for mapistore named properties backend. - Add unix socket support and different port support to mysql backend - Encapsulate mysql parameters into a a data structure - Improve MySQL backend initialization logic and rely on mysqld error   codes - Document new smb.conf parametric options in smb.conf - Remove dead code - Add sanity checks to modified functions - Add doxygen comments to functions reviewed
+  * [f6cfcd] Add unit testing for mapistore_namedprops_init and mapistore_namedprops_mysql_parameters
+  * [697ff6] Add libsamba-util-dev to workaround missing util/debug.h in travis
+  * [394f40] Revert "Add libsamba-util-dev to workaround missing util/debug.h in travis"
+  * [e054eb] Fix openchange-testsuite make rule
+  * [94fb3f] update pointer checks in ck_assert
+  * [cc1264] Add symbolic link on libraries to allow running binaries without having to run make install
+  * [378ee4] Remove compiler output for testsuite linkage
+  * [0ce4aa] Add libmapi to the libs deps of testsuite to solve a linkage issue on openchange-testsuite
+  * [d0a9c5] Fix mysql database parametric option in doc
+  * [645403] Add parametric options get/set test for mysql named properties
+  * [5dd5ad] - Move schema and table defines to backend header file - Review and update initialize_database and create_schema
+  * [ca3641] Fix typo
+  * [8a71ea] make openchange-testsuite linkage more consistent
+  * [75b361] Add mysql service to travis-ci
+  * [e73ccc] Add first mysql tests to namedprops mysql testsuite Update create_schema to take an schema path different from default
+  * [ef9785] travis check version does not know about ck_assert_ptr_ne, replace with ck_assert instead.
+  * [5738e1] Do not expose backend functions and revert them to static methods
+  * [4f83f0] Do not process an empty schema file Improve return value from create_schema function in mysql namedprops backend
+  * [b5d01c] set mapistore error retval when using goto end in create_schema
+  * [9ea5d3] Add create_schema unit test (non existent, empty, invalid, normal)
+  * [c3a5fc] - Add schema path parameter to initialize_database in namedprops mysql backend - Add initialize_database unit test - Increase mysql timeout to 60 seconds to work around timerout reach when unit testing database initialization
+  * [13409a] - Fix typo error introduced in next_unused_id mysql query - add a new parametric option to specify custom mysql namedprops data   path + update documentation and existing test to reflect this change - add new fixture functions for mysql namedprops test suite - add test to check next_unused_id
+  * [ff3136] - Fix typo error introduced in next_unused_id mysql query - add a new parametric option to specify custom mysql namedprops data   path + update documentation and existing test to reflect this change - add new fixture functions for mysql namedprops test suite - add test to check next_unused_id
+  * [22e299] Add server-side implementation for GetReceiveFolderTable Add mysql backend support for GetReceiveFolderTable operation Fix SetReceiveFolder behavior:     - typo responsible for returning MAPI_E_CALL_FAILED     - behavior when fid == 0     - return inbox fid when MessageClass is NULL
+  * [4e3e77] Add mysql backend support for GetReceiveFolderTable operation Fix SetReceiveFolder behavior:     - typo responsible for returning MAPI_E_CALL_FAILED     - behavior when fid == 0     - return inbox fid when MessageClass is NULL
+  * [d33b2d] return MAPI_E_NO_SUPPORT for GetReceiveFolder calls over Public Folders
+  * [01ac32] Add GetReceiveFolderTable support to LDB openchangedb backend.
+  * [1081c4] Honor OXCSTOR specification and return MAPI_E_NO_SUPPORT when ReceiveFolder is called from Public Folder store
+  * [9c3b09] Add GetReceiveFolderTable support to LDB openchangedb backend.
+  * [5644a6] Honor OXCSTOR specification and return MAPI_E_NO_SUPPORT when ReceiveFolder is called from Public Folder store
+  * [f6d677] Fix MessageClass check when string is ending with a period '.'
+  * [6de841] Honor OXCSTOR specification and return MAPI_E_NO_SUPPORT when ReceiveFolderTable is called from Public Folder store
+  * [2e1801] Honor OXCSTOR specification and return MAPI_E_NO_SUPPORT when ReceiveFolderTable is called from Public Folder store
+  * [fbe9b0] Outlook 2003 requires SpIProcess LogonFlags to operate properly
+  * [8de71e] Revert "Merge branch 'jkerihuel/samba-4.2.0-fix' into jkerihuel/indexing-sql"
+  * [1fd70f] Add missing PT type to get_nameid to prevent from raising abort() - Fix cr#1786
+  * [0d6028] Rename smbconf README file with md extension to allow proper display on github.
+  * [e05748] Fix lack of sanity checks on pStat structure in NspiQueryRows leading to uint32_t overflow and later on array overflow (#cr-1876)
+  * [78a209] 1876 -> 1872 rename
+  * [ffdcc9] 1876 -> 1872 rename
+  * [e3de56] Fix #CR-1863
+  * [e666b0] Make explicit comparison Remove unnecessary talloc_free call
+  * [fdee90] Add sanity checks while recursively looking for child folders
+  * [407df4] Fix #CR-1642 Add sanity checks over memory allocation
+  * [c11504] Changes to match coding style.
+  * [7f1840] Add sanity checks to get_property_data_message and contribute fixing
+  * [c7d332] For some reason, this commit didn't make it through when merging from openchange/openchange master last time.
+  * [acf73d] Add python-mysqldb requirement to pass unit tests in pull requests depending on mysqldb
+  * [36302e] Fix #CR-2034 Fallback to LDB backend if mapistore:namedproperties is missing
+  * [f5ca7d] Fix expected returned value for mapitest zentyal 1872
+  * [632199] Update samba4 version to 4.1.11
+  * [175dcc] Add memory checks on GetReceiveFolder mysql backend function Initialize MessageClass prior call to openchangedb_get_ReceiveFolder Fix small memory leak
+  * [0988d2] Prevent mapistore_init() from overwriting mapping_path if it was previously set with mapistore_set_mapping_path().
+  * [e13171] Remove undefined reference to mapistore_check test tool
+  * [3bf684] Remove comment
+  * [1015d8] Do not try to guess sam.ldb
+  * [3eecf5] Do not try to guess sam.ldb in nspi server
+  * [3f8419] Remove debian packaging in php/ folder
+  * [855a2d] mapitest/zentyal: Test to expose ModifyRecipients mv props crash - CR 1804
+  * [540c47] Prevent mapistore_init() from overwriting mapping_path if it was previously set with mapistore_set_mapping_path().
+  * [58af9a] replace deprecated directives
+  * [4c958f] Update configure.ac version to 2.2
+  * [bd2d37] Remove _GNU_SOURCE reference into headers
+  * [4dd28d] Revert "avoid warnings of redefined _GNU_SOURCE"
+  * [a6d4e2] Remove warning due to missing decl in samba public headers
+  * [22ec49] Do not hardcode PKG_CONFIG_PATH in config.m4 Lookup whether libmapi include,libdir are found in configure
+  * [fb5c98] Start development of openchange-2.3-VULCAN
+
+  [ Carlos Perelló Marín ]
+  * [c87b3e] Split the Openchange server registration into different steps
+  * [55080d] Split the Openchange server registration into different steps
+  * [132002]     - Typo fixes.     - Moved commented out entries into a different file so Samba's LDIF file       doesn't try to parse it.
+  * [1489a8] - Typo fixes. - Moved commented out entries into a different file so Samba's LDIF file   doesn't try to parse it.
+  * [2b0e92] Renamed to leave the disabled entries as an .ldif file
+  * [09455c] Samba ldif parser doesn't like comments at the end of the file...
+  * [ab2004] Improved the options to provision an openchange
+  * [24417a] Removed unneed log output and improved the command line usage output
+  * [a30e74] Fixes to allow custom organization name and administration group name
+  * [bdfb31] Added a missing key to substitute the ldif files
+  * [6d16f1] Code refactoring so we generate provision names object before calling any method for all kind of provisions
+  * [ebb68b] Fixed typos
+  * [09dc02] Ignored generated folders and files
+  * [6a576f] Removed old svn / bzr code for snapshots and added git one
+  * [54f5ee] Ignored more generated files
+  * [85d2a1] Added missing debian changelog from latest release
+  * [560779] Fixed PT_MV_LONG type export
+  * [8359ca] Fixed PT_MV_LONG type parser
+  * [9434ca] Fixed SHORT format parser
+  * [96cd56] Bunch of fixes and improvements and implemented a function to autogenerate libmapi/conf/mapi-named-properties so all properties are defined the same way across all openchange files
+  * [5413cd] Revert "Bunch of fixes and improvements and implemented a function to autogenerate libmapi/conf/mapi-named-properties so all properties are defined the same way across all openchange files"
+  * [e4106d] Implemented MAPI_W_ERRORS_RETURNED handling for named GetIDsFromNames calls and logged the unknown properties
+  * [399aa5] Added missing folders to ignore
+  * [3fe05f] Removed the 'alpha' label
+  * [f4563d] Updated with latest .deb release
+  * [42f8e6] Added a way to unregister an additional openchange server (WIP)
+  * [8c160b] Implemented openchangedb deprovision
+  * [3bec3e] Improved the usage check logic and included mailboxes usage
+  * [5b7cab] Improve error handling
+  * [5d4882] Fixed user mailbox usage check
+  * [8ce43e] Send error messages to stderr
+  * [ae5bfa] Added missing import and check for mailbox status to tag it as being used
+  * [4e74c9] Released a new package
+  * [d1d41e] The new installation path in saucy doesn't need the .pth files anymore
+  * [33d1d1] Removed references to the *.pth files
+
+  [ Samuel Cabrero ]
+  * [129e46] Fix LDIF oc_provision_configuration_finalize.ldif
+  * [611f97] Fix register as main ldif
+  * [670145] Fix provision as aditional and deprovision
+  * [cb4320] Use specified server IP address for binding string
+  * [062685] Add ocsmanager OOF controller
+  * [54dbd9] WIP OOF controller
+  * [b3ce50] Set operation working
+  * [d791a2] Set and Get commands working
+  * [419072] Remove unused libs and debug logging
+  * [004229] Fix typo in variable name
+  * [3d53b2] Save settings on separate file. Fix HTML formatted responses.
+  * [3c4239] Implement external and internal audience messages
+  * [f4b7a2] Remove packaging from master branch
+  * [30e50f] Release 1:2.0-2~20140205-1
+  * [701b4a] Fix python mapistore.py included in openchangeserver package
+  * [03be2b] Fix missing import
+  * [ed79e9] Fix OOF sieve script permissions
+  * [e03405] Release 3:2.0-2~20140606-1
+  * [5a612f] oof.py: Format code to meet PEP8 style guide
+  * [8214bf] oof.py: Fix wrong variable name
+  * [40c70e] oof.py: Ensure files are closed if exceptions are raised
+  * [f9dbe9] oof.py: Make out of office independant from Zentyal
+  * [2e41cd] oof: Add config example for out of office to development.ini
+  * [3ee7bf] Remove not user ocsmanager controller sieve.py
+  * [f4fbaa] provision: Send 'update schema now' action after each schema modify operation
+  * [c3c61d] provision: Send 'update schema now' in provision_schema function
+
+  [ José Antonio Calvo ]
+  * [d3570b] added debian packaging
+  * [04798b] fix depends
+  * [c92510] new version
+  * [3b1ab5] added C language/locale to autogenerated codepage_lcid.c
+  * [5d01ac] proper name for package directories
+  * [752503] renamed php5-mapi to php5-openchange
+  * [e52cd3] rename EXTN
+  * [bd0003] definitive fix for the mapi/openchange conflict
+  * [4572fb] install openchange.ini
+  * [37bf50] true rename to openchange
+  * [af66eb] fixed module name
+  * [de6315] fixed link with libmapi
+  * [7d80b0] remove print_stacktrace()
+  * [f2d6f2] added debian packaging for openchange
+  * [9606e3] remove quilt stuff as patches are currently applied directly
+  * [0661bd] update debian/changelog
+  * [688adf] added missing build-depend
+  * [0d8286] clean *.pyc
+  * [c56df5] added binary to source tarball
+  * [5b172c] remove no longer needed patches
+  * [4bc084] include new files
+  * [5f9a78] update debian/changelog
+  * [ae032c] update debian/changelog
+  * [7032fc] update debian/changelog
+  * [56c680] Revert "Merge remote-tracking branch 'openchange/master'"
+  * [0623b8] Revert "Revert "Merge remote-tracking branch 'openchange/master'""
+  * [49505a] Revert "emsbdbp_object: Fix error handling for emsmdbp_object_get_properties()"
+  * [e97dcd] Revert "emsbdbp_object: Handle error which folder_commit_creation() may return"
+  * [d8a87a] Revert "Revert "emsbdbp_object: Handle error which folder_commit_creation() may return""
+  * [3f6361] Revert "Revert "emsbdbp_object: Fix error handling for emsmdbp_object_get_properties()""
+  * [8b2d17] Revert "Fix potential problems uncovered with gcc -Wextra."
+  * [450d80] Revert "Fix compilation with samba release > 4.1.4 - use new API functions"
+  * [ed00f9] set dist to trusty
+
+  [ Julio García ]
+  * [c85a35] Move everything to php folder
+  * [32f988] Setting proper name
+  * [915bbe] Bumping version to allow the upgrade
+  * [78005f] Fixing small problem in the version number
+  * [3c7f9a] Change upstream branch
+  * [9ff56c] Removing python-mapistore package from the packaging files
+  * [1cdf40] Removing forgotten delted dependency
+
+  [ Miguel Julián ]
+  * [a74610] Added the php5 ini file for the extension
+  * [34f4f8] Replaced some mapi by openchange
+  * [dfedd9] Fixing previous commit
+  * [6d08c6] Fixed class naming extra 's'
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [6d3202] Copying tdb code to an indexing backend
+  * [8e2ded] Added sanity checks to tdb_record_add
+  * [53d6f4] Moved all tdb based indexing code to the backend
+  * [1c46b9] Added mapistore_indexing_tdb_init code
+  * [274048] Removed duplicated backend search before init
+  * [b55abc] Added unittests to Makefile
+  * [f9635f] Added indexing backends unit test suite
+  * [8ea8a5] Joined mid and fid indexing operations
+  * [2c162a] Unified indexing API
+  * [a7ba5e] Added fmid allocation functions to the indexing backend
+  * [e02fe6] Added fmid allocation testing
+  * [0cecb2] Allow external AD as SAM provider
+  * [f46137] Fixed Makefile for coverage checks
+  * [17013a] Moved common mysql code to util/mysql
+  * [ace144] Moved schema creation code to util/mysql
+  * [fb46ee] Fixed cmake unittest configuration
+  * [94992e] Added mysql indexing backend (WIP)
+  * [a4dcdb] Fixed test setup in indexing suite
+  * [895fa1] Added util/mysql to Makefile
+  * [3984bc] Completed more mysql indexing functions
+  * [5f1d47] Completed indexing implementation
+  * [e2c67b] Fixed unittests cmake
+  * [64712e] Fixed indexing_schema file path
+  * [ac35a1] Added libmysqlclient to build dependencies
+  * [b61f93] Fix setup path during provision
+
+  [ Jesús García Sáez ]
+  * [98cdf4] new test directory with unittest of openchange code
+  * [1506a3] use markdown for readme file
+  * [e12651] markdown format
+  * [4e4d03] add coverage flags and xml test output
+  * [f000e9] trying to create namedprops backend layer
+  * [4588c6] rename namedprops_backend to namedprops_context
+  * [488d36] by default use ldb file on the usual path
+  * [75a524] keep it c89 standard
+  * [81ee8c] look for mapistore:nprops_backend from smb.cnf to configure mapistore_namedprops
+  * [2ef209] add sql schema for named_properties
+  * [b56454] add transaction start/commit to named_props backend
+  * [d584bf] move mapistore_namedprops_get_ldif_path to common header
+  * [0e0560] move mapistore_namedprops_get_ldif_path implementation out from the header to mapistore_namedprops.c
+  * [3b8548] initial sketch namedprops mysql backend
+  * [459bcd] start and commit trasaction
+  * [6b6685] add named properties sql schema to makefile install section
+  * [e0b8e0] add "IF NOT EXISTS" on create table statement
+  * [8126d8] namedprops mysql init almost done
+  * [861f53] new test directory with unittest of openchange code
+  * [157b50] use markdown for readme file
+  * [21e61d] markdown format
+  * [04f5f4] initialize mysql with entries from ldif file
+  * [d9fb32] add coverage flags and xml test output
+  * [918500] more logic on mysql_connect
+  * [ce6b10] implemented next_unused_id
+  * [06b59a] test for next_unused_id using populated database with initial ldif file
+  * [5885a7] implemented get_mapped_id
+  * [8e9fbf] insert properly oleguid, detecting better when val is a string
+  * [d10778] implemented get_nameid_type
+  * [df4b2e] implemented get_nameid
+  * [91defe] completed implementation with create_id function
+  * [28b10a] remove test database on teardown
+  * [267b9b] support propType as string in ldb backend
+  * [1b50f1] add unit test for namedprops ldb backend
+  * [8cc758] fix unittest on gcc
+  * [ff12a0] removed unused files from the compilation
+  * [d31374] check SAMBA_PREFIX env variable
+  * [57db96] update makefiles for unittest
+  * [8a6310] Made namedprops unit tests private functions static
+  * [770520] some cflags for unittest
+  * [966958] add test_result.xml and coverage files to .gitignore
+  * [62033d] add link libraries to compile on ubuntu 13.10
+  * [e395d9] refactor declaration of openchangedb_* functions
+  * [7ea16b] adapt emsmdb server to changes on openchangedb_* functions
+  * [a11eff] refactor openchangedb functions to act as proxy calling the real function
+  * [2be3ec] openchangedb ldb backend
+  * [b57878] initialize function for openchange ldb context
+  * [fe0685] added openchangedb_transaction_* functions
+  * [1924df] initialization of openchangedb_ldb and fix lots of compilation errors
+  * [99cc0f] add missing namedprop_transaction_* functions implementation
+  * [de25fc] fix relative include
+  * [6cabb9] create mapistore_indexing_* functions façade of allocate_fids ones
+  * [707055] use new functions to get new folder ids
+  * [2fa3c6] change openchangedb_create_mailbox so we pass the fid instead of be created inside the function
+  * [ec82db] link unittest against mapi library
+  * [efbefb] be able to compile unittest without doing make install of openchange
+  * [cf42e3] backend definition uses new indexing_backend
+  * [965f5e] avoid warnings of redefined _GNU_SOURCE
+  * [ee601a] openchangedb mysql schema
+  * [0f593d] remove get_mailboxDN function from openchangedb interface
+  * [64ba52] minor changes on mysql model file
+  * [2668e8] added FIXMEs to functions not used anywhere
+  * [deae39] initial test for openchagedb_ldb
+  * [c6b508] create indexing context on the right memory context
+  * [9537a2] cleaning up indexing test suite
+  * [82992a] cleaning up test_suites, use static variables
+  * [4f4220] the results need to have mailboxDN attribute
+  * [7c9754] let ldb_init to create the tevent_context (related with returned ldb_ctx pointer)
+  * [aba827] create ldb_context on the right memory context
+  * [5af46f] move test suites to subdirs
+  * [59ecaa] use a ldif file to populate the openchage.ldb for the unit test
+  * [107ba8] minor update on mysql schema, types
+  * [0dd9c6] initial skeleton for openchangedb_mysql, nothing implemented
+  * [7d1f74] move useful macros to common header to reuse them in openchangedb_mysql tests
+  * [408ae9] creation of schema on an empty mysql server working
+  * [ea432e] sample data for openchagedb mysql tests
+  * [61f5c4] populate database with sample data on test and first implemented funciton from mysql backend
+  * [adde10] minor update on mysql model
+  * [7361bb] get_PublicFolderID and get_MailboxGuid implemented
+  * [f90efe] Fix openchangedb_sample.sql generation, missing ':'
+  * [7139b0] several more functions implemented, some without direct fid references
+  * [1cb981] get_TransportFolder and populate folders_names tables on sample data
+  * [946fd2] implemented the functions left that don't require to add user to their arguments
+  * [5b93e5] Implemented get/set_mapistoreURI and removed mailboxstore boolean attribute
+  * [634712] refactor test suites creation and organization: openchagedb and indexing
+  * [3bd566] get_fid implementation, username was not needed for this
+  * [65c82d] get_parent_fid implementation
+  * [15454d] do not insert mailbox_id for public folders
+  * [42c139] get_folder_count implementation
+  * [eb303a] get_folder_property implemented
+  * [3c870e] added slow query checker
+  * [b4dbe4] set_folder_properties implementation
+  * [7abfc2] get_mid_by_subject and get_fid_by_name implemented
+  * [2ec1fe] delete_folder implemented
+  * [7e6a73] get_system_idx working for system folders
+  * [a2b777] implemented get_message_count for messages inside system folders
+  * [b02bb2] new sample data adding a message related with system folder
+  * [f05a6d] implementation of create_mailbox
+  * [53f3e3] implemented create_folder for system folders only
+  * [24753e] remove unused variables
+  * [528243] implementation of openchangedb_messages functions
+  * [5d5d05] implementation of openchangedb_table functions
+  * [a5313b] fixes on _tables functions
+  * [616fbe] activate all test suites
+  * [dfecf1] create public folder ids on mysql openchangedb
+  * [8d27e7] support public folders on openchangedb
+  * [b01547] generate sample data with proper public folders ids
+  * [06603a] use new public folder ids for the current unit test
+  * [8ed4e3] fix compilation error, missing parameter
+  * [8b345b] more issues on compilation related with unittest
+  * [f65414] really use new public folders index on unit test data samples
+  * [f2d484] concrete test for public folders calls
+  * [c0b8a9] escape strings in sql queries
+  * [1d6243] refactor in openchagedb_messages_ functions
+  * [a240b7] allow to edit properties on messages on openchangedb ldb backend
+  * [014b57] use openchangedb_initialize instead of ldb
+  * [e4e95e] include mysql backend in libmapiproxy compilation
+  * [973294] better include headers
+  * [672385] activate namedprop mysql backend
+  * [0d12f8] fixes on folder and message creation
+  * [ba59ea] fix bug get_parent_fid, we had to take care also of mailboxes
+  * [a8217a] fix previous commit
+  * [8b1639] increase folders_names value size to 512
+  * [35a9dd] fix decoding issue due to uninitialized return value
+  * [60e881] start to allocate folder ids since max public folder id allowed
+  * [b46ffe] initialize indexing backend according to openchangedb
+  * [98ed90] fix unittest compilation issues
+  * [cd21db] fix segmentation fault when the mysql initialization failed because sql schema didn't exist
+  * [652d36] fix current python unit test
+  * [085d96] provision openchangedb using mysql as backend
+  * [aa5f01] minor fixes on provisioning
+  * [f7ffe2] fix set folder properties for mailboxes
+  * [fd9200] better memory allocation for local variables
+  * [5f746b] fix doble free error when there were no results
+  * [6d021b] create folder must create folders_names entry with the display_name with en_US locale
+  * [80ca9f] change debug log message
+  * [92cf9b] set a default indexing url backend from smb.conf
+  * [408b07] deprovision openchangedb mysql
+  * [dcf4a1] avoid warning assignment discards const qualifier
+  * [1e8f0c] save current locale in mailboxes table on login operation
+  * [6a6f95] set locale after provision the mailbox
+  * [e640ea] remove folders_names table, it was useless
+  * [4cb4ae] fix get_fid_by_name filtering by mailbox
+  * [b2fc38] support multilanguage with hardcoded translations on code
+  * [99e745] get folders names from openchangedb mysql backend
+  * [cc39dd] update folder's name when mailbox's locale changes
+  * [774365] fix get_SystemFolderId to avoid special folders with same systemIdx
+  * [ef6c2f] really bad idea constant with arithmetic on it
+  * [18f5ec] Translate mailbox display name
+  * [8e9b7e] better change of display names when locale changes
+  * [8ec867] abstract openchangedb queries supporting both ldb and mysql backends on ocsmanager
+  * [0fb627] fix initialization of openchangedb on openchange.mapistore bindings
+  * [3258d3] recreate database when provisioning openchangedb
+  * [0a18ae] allow request 0 folder ids
+  * [df6238] implement get_new_changeNumbers, it's being used by SOGo
+  * [c55a34] public folder ids are now exchange compatible, back again
+  * [a007de] support set_ReceiveFolder with mailbox as target on openchangedb mysql
+  * [299602] fix bug on get_ReceiveFolder of openchangedb ldb
+  * [3cd44b] check for mysql/mysql.h on configure
+  * [342cb0] better test case names, more easy to execute individually
+  * [099606] implement get_fmid with wildcard on mysql indexing backend
+  * [a3ed21] remove unique index from openchangedb mysql schema because is too long
+  * [9c88da] allow to call mapistore_namedprops_get_nameid with NULL as talloc context
+  * [82f326] when installed with deb packges python code is on dist-packages subdir
+  * [338acd] remove database for real when requested
+  * [90430d] improve get transport folder function
+  * [ae5c2b] change get_new_folderID calls to add username as parameter
+  * [66e4e0] set root mailbox name neutral string
+  * [7ab4c5] do not free parent context!
+  * [a5dc24] change openchangedb_create_folder calls, don't use emsmdbp_context username
+  * [5d93ae] provision public freebusy folder only when the user is really logged in
+  * [3c99e5] script that returns 0 (alive) or 1 (oc is not running)
+  * [668973] use strtoull instead of strtoul
+  * [57b3e0] close mysql connection when indexing context is destroyed
+  * [036bb8] ocsmanager uses openchangedb with ldb when is not provisioned with mysql backends
+  * [107b26] add mysql libs to unittest compilation
+  * [ca448c] added copyrights headers
+  * [07d923] added copyrights headers
+  * [31fd31] added copyrights headers
+  * [72caa0] testsuite: Port indexing Tests from Zentyal branch
+  * [624a14] coding style, variable declaration
+  * [aa032e] remove unnecessary debian/* entries from .gitignore
+  * [3dc0dc] refactor, better way to obtain stdout from Popen
+  * [e0d44b] namedprops mysql/tdb and indexing mysql/tdb now under testsuite
+  * [d3d2c5] sanity checks of parameters on indexing tdb functions
+  * [4e4214] added namedproperties:ldb_data option
+  * [028d2c] namedproperties ldb: fix regression next_unused_id, wrong sanity check
+  * [6dd0c0] added libmapi properties unit test to testsuite
+  * [7a6f66] make testsuite-check doesn't need to install first and xml output
+  * [151150] merged openchangedb ldb/mysql unit test into testsuite
+  * [454eaa] openchangedb mysql init requires loadparm_context
+  * [2cc398] removed unittest from test/ subfolder
+  * [864fc6] included indexing and openchangedb config options to readme
+  * [fc4413] indent typo
+  * [f2576d] fix regression on openchangedb ldb backend related with public folders
+  * [8e209b] refactor get new public folder id into function
+  * [434543] retval checks on emsmdbp_mailbox_provision_public_freebusy
+  * [5afc76] fixed make ocsmanager-install
+  * [4d227b] Return errors instead of abort on emsmdbp_mailbox_provision
+  * [7e7ae1] emsmdbp: refactor functions searching for either org or group
+  * [a54038] emsmdbp_object: sanity and error checks
+
+  [ Kamen Mazdrashki ]
+  * [47f9d2] oc-sql: Properly initialize return value from create_connection MySQL backend
+  * [d14ce8] makefile: Fix 'samba-git-update' target
+  * [ee92ce] mapistore: Bypass Embedded message creation for Tasks in Outlook
+  * [8623c3] Revert "mapistore: Bypass Embedded message creation for Tasks in Outlook"
+  * [3ec042] emsabp_property: Fix PropTag mapping when resolving PropTag to attribute name
+  * [9d09a5] dcesrv/spiGetProps: Move code to make PtypError property values in separate function
+  * [773a4e] dcesrv/NspiQueryRows: Return PtypError prop values when we can't find MId requested
+  * [6f7d52] emsmdb: emsmdbp_object_get_fid_by_name should use current mailbox username
+  * [8da96e] emsmdb: Use mailbox->owner_username in emsmdbp_object_open_folder()
+  * [e1b2de] emsmdb: Use mailbox->owner_username in emsmdbp_object_get_properties_mailbox()
+  * [3e3ca7] emsmdb: Extend emsmdbp_get_parent_fid() to accep and use mailbox object for 'fid' to get parent of
+  * [7db8ba] emsmdb: Use mailbox context in emsmdbp_object_open_folder_by_fid() to resolve FIDs
+  * [2f71ea] emsmdb: emsmdbp_object_open_folder_by_fid - remove obscure 'else' and add sanity checks on input parameters
+  * [cf3e44] emsmdb: emsmdbp_object_open_folder_by_fid - move local variable into local context
+  * [6874b8] emsabp_property: Fix PropTag mapping when resolving PropTag to attribute name
+  * [34b1df] dcesrv/spiGetProps: Move code to make PtypError property values in separate function
+  * [8d6482] dcesrv/NspiQueryRows: Return PtypError prop values when we can't find MId requested
+  * [c01c6b] emsmdb: emsmdbp_object_get_fid_by_name should use current mailbox username
+  * [595e29] emsmdb: Use mailbox->owner_username in emsmdbp_object_open_folder()
+  * [ec94e9] emsmdb: Use mailbox->owner_username in emsmdbp_object_get_properties_mailbox()
+  * [0f84fd] emsmdb: Extend emsmdbp_get_parent_fid() to accep and use mailbox object for 'fid' to get parent of
+  * [33229b] emsmdb: Use mailbox context in emsmdbp_object_open_folder_by_fid() to resolve FIDs
+  * [929883] emsmdb: emsmdbp_object_open_folder_by_fid - remove obscure 'else' and add sanity checks on input parameters
+  * [5415fb] emsmdb: emsmdbp_object_open_folder_by_fid - move local variable into local context
+  * [c4b1ce] mysqldb: Fix message_get_property() to not crash in case proptag requested is not found
+  * [d3f2eb] ldb_db: get_mapistoreURI() fix potential memory leak
+  * [4cf43c] mysqldb: Fix message_get_property() to not crash in case proptag requested is not found
+  * [06a10a] ldb_db: get_mapistoreURI() fix potential memory leak
+  * [00cda1] libmapi: Impelement copy for struct SPropValue for multivalue properties
+  * [04ad55] libmapi: Remove abort for Multivalue properties in mapi_copy_spropvalues()
+  * [65008f] libmapi: Unit test for mapi_copy_spropvalues()
+  * [fb2ab2] oxcfold: Fix debug log markers to be OXCFOLD
+  * [a57b50] emsmdbp_object: Use mapistore_error result type for mapistore_table_get_row() call
+  * [2f039e] libmapi: Add libmapi/property.c test to Openchange Unit test suite
+  * [422681] openchangedb_property: Search String properties by PROP ID
+  * [0c86fd] oxcmsg: Implementation for partial UserDNs in ModifyRecipients call
+  * [ce3d75] build: Don't rmdir on setup/mapistore, just remove mapistore_namedprops_v2.ldif
+  * [0798f7] setup: Move enable/disable account handlers after create account
+  * [e9b177] oxcfxics: Fail RopSyncImportHierarchyChange if we can't open perent folder for SyncContext
+  * [c7329f] oxcfxics/RopSyncImportHierarchyChange: use parent_folder var to open underlying folder
+  * [a86c57] Create commandline tool to list Mapistore contexts in JSON
+  * [c42d57] exchange_emsmdb/dcesrv_EcDoRpcExt2: Fix use-after free in
+  * [226e82] mapistore_replica: ensure the user mapistore directory exists before any mapistore operation occurs
+  * [cf8039] mapistore_replica: Initialize replica database if it freshly created
+  * [e1f095] mapistore/backend_get_path: Check return value from backend.get_path for != NULL
+  * [97b985] Introduce "Various implementation and stability patches" patch again
+  * [110e9c] Revert "oxcmsg: Implementation for partial UserDNs in ModifyRecipients call"
+  * [51c5e0] mapistore_replica: Add mem-alloction checks in mapistore_replica_add()
+  * [c943a7] testsuite: Use defined password for MySQL tests rather that hardcoded literal
+  * [623720] test/indexing: Remove TDB related tests
+  * [654b8a] test/indexing: Format global variables and defines
+  * [061049] test/indexing: check return values in mysql_setup()
+  * [805cb0] backend/indexing: Stick to mapistore_error error codes during initialization for mysql backend
+  * [e3a76c] test/indexing: Add test case for indexing_mysql backend initialization
+  * [104f87] backend/indexing: More sanity checks during init/destroy for mysql backend
+  * [1ff401] util/mysql: terminate DEBUG log messages with new line
+  * [6fdbba] test/indexing: Add test_mysql_search_existing_fmid_invalid_input
+  * [ad5de7] backend/indexing: Add more sanity checks and comments for mysql_search_existing_fmid
+  * [e205ae] backend/indexing: Remove unused TDB_WRAP() macro
+  * [6076ce] backend/indexing: Move INDEXING_SCHEMA_FILE/_TABLE/_ALLOCA_TABLE to header file
+  * [7f3c54] test/indexing: Remove debug traces - makes the test too verbose
+  * [806ee8] backend/namedprops:create_schema: Avoid leaving open file in case talloc fails
+  * [88e0e3] test/indexing: Make init test to actually test with not valid password
+  * [7b398a] backend/indexing: Sanity checks for mysql_record_add() input params
+  * [1233dd] test/indexing: add and restyle tests for indexing->add_fmid() interface
+  * [7fa39f] backend/indexing: Lower debug level when creating indexing tables 0 is too verbose
+  * [56c633] backend/indexing: Check input params for mysql_record_update() - aka update_fmid
+  * [bbdcf7] backend/indexing: Verify that record has been actually updated by mysql_record_update()
+  * [717c78] test/indexing: Add and refactor tests for indexing->update_fmid() interface
+  * [dbac8f] backend/indexing: mysql_record_del - add param checking and documentation
+  * [e05d2d] test/indexing: Prepopuldate indexing DB with existing FMDI/URI to test with
+  * [efd23e] test/indexing: Refactor tests for indexing->del_fmid() interface
+  * [1247af] backend/indexing: mysql_record_get_uri() input param check and documentation
+  * [a4a727] test/indexing: Refactor tests for indexing->get_uri() interface
+  * [c66fa0] backend/indexing: mysql_record_get_fmid() input check
+  * [f412d7] test/indexing: Refactor tests for indexing->get_fmid() interface
+  * [c84735] test/indexing: Allow testing from dev tree by using relative path for setup files
+  * [43da6c] backend/indexing: Use MAPISTORE_RETVAL_IF instead of OPENCHANGE_RETVAL_IF  in mapistore layer
+  * [e1db13] oxcmsg/ModifyRecipients: Implement multi-valued properties for RecipeintRow
+  * [c08d2c] mapitest/zentyal: Extend the test for ModifyRecipients with multi-valued properties
+  * [da9544] libmapi/IMAPIFolder: Fix CreateMessage to store messageId we just created
+  * [76d437] mapicode: Fix MAPI_STATUS_ERR() macro to check for errors
+  * [a28d0a] oxcfold: Avoid leaking a handle in RopGetContentsTable
+  * [ff7844] pymapistore/folder: Fix kwnames list to end with NULL element
+  * [52c049] oxcfold: Fix stupid crash EcDoRpc_RopGetContentsTable
+  * [56618a] oxcfold: enhance error checking in RopGetContentsTable() implementation
+
+  [ Enrique J. Hernández Blasco ]
+  * [e0a75f] Revert "Removing python-mapistore package from the packaging files"
+  * [7282a1] Enable pyopenchange mapistore Python bindings
+  * [fd5af8] Missing python-mapistore dependency on python-ocsmanager
+  * [8413f9] Fix get_user_calendar for MySQL backend
+  * [8bc8e2] Add context from mapistore use username and not cn
+  * [a7863a] Manage no MySQL connections in the OpenChange db wrapper
+  * [70a857] Send FreeBusy Response even when the FreeBusyOptions are not sent
+  * [e7b828] Sequential selects on multithreaded environment
+  * [c8683a] Set proper error codes in each case
+  * [71ada5] Fix dummy bug on creating the lock
+  * [fbca17] Missing import for LDB backend
+  * [85d9eb] Fix get_user_calendar for MySQL backend
+  * [9521a4] Add context from mapistore use username and not cn
+  * [fec183] Manage no MySQL connections in the OpenChange db wrapper
+  * [344f60] Send FreeBusy Response even when the FreeBusyOptions are not sent
+  * [1fbcc2] Sequential selects on multithreaded environment
+  * [07a7e3] Set proper error codes in each case
+  * [a73c2f] Fix dummy bug on creating the lock
+  * [74fa4e] Missing import for LDB backend
+  * [d70a30] Honor dcerpc_mapiproxy:samdb_url parameter when available
+  * [228ee1] Fix autodiscover URLs when the OpenChange is behind a proxy
+  * [7b4ce7] Added copyright note
+  * [e6c817] Honor dcerpc_mapiproxy:samdb_url parameter when available
+  * [7561be] Fix autodiscover URLs when the OpenChange is behind a proxy
+  * [158f0b] Added copyright note
+  * [6bb56e] Be more pep8 compliant
+  * [0ee748] Added options to set RPC/Proxy configuration
+  * [a10079] Return the SMTP Address as stored in our LDAP
+  * [b5887c] Include EWS URLs in RPC/Proxy configuration
+  * [afbeaa] Added copyright note
+  * [3f7d0f] Adding non direct OC deps to avoid some warnings
+  * [4f99d1] Add a retry using old packages when the stacktrace is not usable
+  * [1ffc66] Do not crash if the stacktrace is invalid
+  * [e98205] Break with the first configuration with a readable stacktrace
+  * [d85e99] Added missing samba dep
+  * [054094] Fix #CR-1645
+  * [232b47] Added client side duplicates tracking
+  * [cd6c18] Store original URL from the crash
+  * [a3055a] Added suggested_file_name to the upload method
+  * [749ecf] Better naming to processed crashes
+  * [2c1ba6] Fix typo in db conf example
+  * [440e33] Management of tracker URL in sqlite DB
+  * [cd608f] Added tracker management for crash report
+  * [60e9d0] Use GB mirrors which are faster
+  * [8b0da4] Added missing dependency to README
+  * [8f567c] Added an option to send a notification to a user
+  * [aa8d5b] Remove debug sentences
+  * [af550a] Fix components line in issue description
+  * [8c2370] Minor fixes on mail and tracker output
+  * [5431d6] Create script to upload a crash report db
+  * [a247d3] Remove the temporary file created at the end
+  * [f2225b] Install upload-crash-report.py along with openchangeserver
+  * [f4124f] Use python3 by default
+  * [b80579] Revert usage of python3
+  * [ab4be9] Typo fixes
+  * [f86144] Improvements to tracker
+  * [cf7a3d] Added reporter email to a custom field
+  * [88c53a] Make -u and -f options compatible
+
+  [ Julio J. García Martín ]
+  * [ec6172] Revert "Various implementation and stability patches"
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Wed, 27 Aug 2014 16:15:04 +0200
+
+openchange (3:2.0-2~20140606-1) trusty; urgency=medium
+
+  * Merged master
+
+ -- Samuel Cabrero <scabrero@zentyal.com>  Fri, 06 Jun 2014 12:14:19 +0200
+
+openchange (3:2.0-2~20140327-2) trusty; urgency=low
+
+  * trusty build
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Fri, 28 Mar 2014 15:30:52 +0100
+
+openchange (3:2.0-2~20140327-1) saucy; urgency=low
+
+  * saucy New upstream release
+
+ -- Julio J. García Martín <jjgarcia@zentyal.com>  Thu, 27 Mar 2014 18:05:23 +0100
+
+openchange (1:2.0-2~20140217-2) saucy; urgency=low
+
+  * Fix deprovision
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Mon, 17 Feb 2014 23:29:06 +0100
+
+openchange (1:2.0-2~20140217-1) saucy; urgency=low
+
+  * Fix provision
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Mon, 17 Feb 2014 15:39:33 +0100
+
+openchange (1:2.0-2~20140216-1) saucy; urgency=low
+
+  * Merged Out of Office support from master
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Sun, 16 Feb 2014 18:50:35 +0100
+
+openchange (1:2.0-2~20140214-1) saucy; urgency=low
+
+  * Merged mysql backend from master
+  * Dropped patches already merged in upstream
+
+ -- José A. Calvo <jacalvo@zentyal.com>  Fri, 14 Feb 2014 15:14:55 +0100
+
+openchange (1:2.0-2~20140205-1) saucy; urgency=low
+
+  [ Samuel Cabrero ]
+  * Rebuild for saucy
+  * Align packaging with debian unstable.
+
+  [ Carlos Perelló ]
+  * Added some fixes to the import / export code.
+  * Fixed a wrong path for cached files from python-ocsmanager.
+  * python-ocsmanager is now installed on the standard system path.
+  * python-mapistore and openchangeserver install a .pth file now to add those
+    python packages automatically to the pythonpath.
+
+ -- Samuel Cabrero <scabrero@zentyal.com>  Wed, 29 Jan 2014 23:32:05 +0100
+
+openchange (1:2.0-2) unstable; urgency=low
+
+  * Add 02_sort_mapistore_namedprops: Make sure
+    mapistore_namedprops.ldif contents are consistent across runs, to
+    prevent issues with multi-arch. Closes: #727008
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Tue, 22 Oct 2013 08:55:51 -0500
+
+openchange (1:2.0-1) unstable; urgency=low
+
+  [ Jeroen Dekkers ]
+  * New upstream release.
+
+  [ Jelmer Vernooij ]
+  * Depend on samba-dev rather than deprecated samba4-dev.
+  * Drop 01_symlinks, 02_mapiproxy_dl, 03_no_popt and 04_ndr_noalign; applied
+    upstream.
+  * Add 01_detection_boost to work around boost detection issues with boost >=
+    1.50.
+  * Update for restructured Samba package: depend just on samba-dev
+    rather than handful of -dev packages.
+  * Bump standards version to 3.9.4 (no changes).
+  * Fix Vcs-Browser URL for git.
+
+  [ Dmitrijs Ledkovs ]
+  * Drop BOOST_LIBS_SUFFIX=-mt configure variable. Closes: #710081
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sat, 13 Apr 2013 20:21:40 +0200
+
+openchange (1:1.0-4) experimental; urgency=low
+
+  * openchangeserver: Add dependency on openchangeproxy.
+  * Rebuild against newer version of Samba 4.
+  * Use dpkg-buildflags.
+  * Migrate to Git, update Vcs-Git header.
+  * Switch to debhelper 9.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Thu, 12 Apr 2012 20:07:57 +0200
+
+openchange (1:1.0-3) unstable; urgency=medium
+
+  * Add 04_ndr_noalign: Fix handling of non-small emails. Closes: #692727
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Thu, 08 Nov 2012 15:47:54 +0100
+
+openchange (1:1.0-2) unstable; urgency=low
+
+  * Remove unnecessary links.
+  * Add patch 03_no_popt: Avoid use of samba/popt.h, which is no longer
+    present in newer versions of Samba.
+  * Depend on newer version of pidl with fix for CVE-2012-1182.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Thu, 12 Apr 2012 03:46:04 +0200
+
+openchange (1:1.0-1) unstable; urgency=low
+
+  * Bump standards version to 3.9.3 (no changes).
+  * New upstream release.
+   + Sets table position in nspi_SeekEntries. LP: #926536
+   + No longer crashes on illegal multibyte sequence error in NDR.
+     LP: #684205
+  * Fixes dependencies on libraries required for symbols. Closes: #664937
+  * Leave creating symlinks to the openchange buildsystem rather than
+    doing it manually in debian/rules.
+  * Add dependency on autoconf and automake, for from-SVN builds.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Thu, 22 Mar 2012 12:52:26 +0100
+
+openchange (1:0.11.dfsg1-1) unstable; urgency=low
+
+  * Repack orig tarball to exclude waf. Closes: #654494
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Tue, 07 Feb 2012 16:21:04 +0100
+
+openchange (1:0.11-2) unstable; urgency=low
+
+  * Upload to unstable.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Wed, 28 Sep 2011 14:40:47 +0200
+
+openchange (1:0.11-1) experimental; urgency=low
+
+  * New upstream release.
+   + Supports newer versions of Samba4. Closes: #634549
+   + Fixes several bugs handling non-ascii characters. LP: #615444
+  * Switch to dh_python2. Closes: #616925.
+  * Add support for multi-arch.
+  * Bump standards version to 3.9.2 (no changes).
+  * Switch to new style debhelper.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sun, 31 Jul 2011 21:01:51 +0200
+
+openchange (1:0.11~bzr1932-1) experimental; urgency=low
+
+  * New upstream snapshot.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Mon, 24 Jan 2011 14:01:32 -0800
+
+openchange (1:0.11~bzr1901-1) unstable; urgency=low
+
+  * New upstream snapshot.
+   + Fixes missing linking of -ldl. Closes: #558943
+  * Add dependency on libsubunit-dev for subunit support in mapitest.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Mon, 04 Oct 2010 20:42:11 +0200
+
+openchange (1:0.10~bzr1804-1) unstable; urgency=low
+
+  * New upstream snapshot.
+  * Change section of libmapi0, libmapipp0, libocpf0 to libs.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Mon, 23 Aug 2010 15:49:09 +0200
+
+openchange (1:0.9+svn2132-1) experimental; urgency=low
+
+  * New upstream snapshot.
+  * Bump standards version to 3.9.1 (no changes).
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Mon, 23 Aug 2010 14:14:19 +0200
+
+openchange (1:0.9+svn1970-1) experimental; urgency=low
+
+  [ Mathieu Parent ]
+  * Add Vcs-Browser
+  * libmapi-dev depends on libndr-standard-dev.
+    Fix "Missing dependency on samba4-dev" (Closes: #549012)
+
+  [ Jelmer Vernooij ]
+  * Use source format version 3.
+  * Bump standards version to 3.8.4.
+  * New upstream snapshot.
+  * Add build dependency on zlib1g-dev. Closes: #577330
+  * Migrate packaging to Bazaar.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sat, 19 Jun 2010 00:14:54 +0200
+
+openchange (1:0.8.2+svn1524-1) unstable; urgency=low
+
+  * New upstream snapshot.
+  * Upload to unstable.
+  * Bump standards version to 3.8.3.
+  * Add missing build dependency on libsqlite3-dev. Thanks Fabrice
+    Coutadeur <fabricesp@ubuntu.com>. (Closes: #541134)
+  * Remove optional build-dep on samba4-specific ldb.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sat, 12 Sep 2009 14:14:05 +0200
+
+openchange (1:0.8.2+svn1423-1) experimental; urgency=low
+
+  * New upstream snapshot.
+  * Build exchange2ical.
+  * Add missing dependency on libtevent-dev. (Closes: #524000)
+  * Fix missing dependencies of libmapi-dev. (Closes: #525884, Closes: #525890)
+  * Add libmapi++ package.
+  * Add libmapistore{0,-dev} packages for MAPI storage library.
+  * Add openchangeserver-dev package.
+  * Include howto in openchangeserver package. (Closes: #524694)
+  * Bump standards version to 3.8.2.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sat, 18 Jul 2009 18:03:29 +0200
+
+openchange (1:0.8-2) experimental; urgency=low
+
+  * Depend on python and install server provision scripts.  (Closes: #511941)
+  * Filter code name out of version in debian/watch.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Sat, 24 Jan 2009 21:43:19 +0100
+
+openchange (1:0.8-1) experimental; urgency=low
+
+  * New upstream release.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Wed, 21 Jan 2009 00:56:36 +0100
+
+openchange (1.0~svn991-1) experimental; urgency=low
+
+  * New upstream snapshot. (Closes: #504968, #507061)
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Sun, 11 Jan 2009 15:07:53 +0100
+
+openchange (1.0~svn894-1) experimental; urgency=low
+
+  * New upstream snapshot.
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Wed, 26 Nov 2008 19:37:55 +0100
+
+openchange (1.0~svn842-1) experimental; urgency=low
+
+  * New upstream snapshot.
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Sat, 01 Nov 2008 00:59:53 +0100
+
+openchange (1.0~svn794-2) experimental; urgency=low
+
+  * Require a newer version of LDB because of API changes. (Closes: #500790)
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Wed, 01 Oct 2008 15:12:19 +0200
+
+openchange (1.0~svn794-1) experimental; urgency=low
+
+  * New upstream snapshot.
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Tue, 30 Sep 2008 18:01:25 +0200
+
+openchange (1.0~svn694-2) experimental; urgency=low
+
+  * New upstream snapshot.
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Mon, 25 Aug 2008 17:40:17 +0200
+
+openchange (1.0~svn679-1) experimental; urgency=low
+
+  * Initial release. (Closes: #420291)
+
+ -- Jelmer Vernooij <jelmer@samba.org>  Wed, 06 Aug 2008 18:32:45 +0200
