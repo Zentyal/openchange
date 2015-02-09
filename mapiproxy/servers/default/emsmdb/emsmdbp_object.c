@@ -288,7 +288,7 @@ static enum mapistore_error emsmdbp_object_folder_commit_creation(struct emsmdbp
 
 	ret = mapistore_add_context(emsmdbp_ctx->mstore_ctx, owner, mapistore_uri, fid, &context_id, &new_folder->backend_object);
 	if (ret != MAPISTORE_SUCCESS) {
-		OC_ABORT(false,
+		OC_PANIC(false,
 			 ("mapistore_add_context() failed with 0x%.8x, mapistore_uri = [%s].\n",
 			  ret, mapistore_uri));
 		goto end;
@@ -388,7 +388,7 @@ _PUBLIC_ enum MAPISTATUS emsmdbp_object_create_folder(struct emsmdbp_context *em
 			}
 		}
 		else {
-			OC_ABORT(true, ("PidTagChangeNumber *must* be present\n"));
+			OC_PANIC(true, ("PidTagChangeNumber *must* be present\n"));
 		}
 	}
 	*new_folderp = new_folder;
@@ -456,7 +456,7 @@ _PUBLIC_ enum mapistore_error emsmdbp_object_open_folder(TALLOC_CTX *mem_ctx, st
 				parent_fid = parent->object.folder->folderID;
 				break;
 			default:
-				OC_ABORT(true, ("Trying to open folder with parent not a Mailbox or Folder. Parent type: %d\n",
+				OC_PANIC(true, ("Trying to open folder with parent not a Mailbox or Folder. Parent type: %d\n",
 						parent->type));
 				break;
 			}
@@ -1403,7 +1403,7 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_folder_open_table(TALLOC_CTX *mem_ctx,
 				mstore_type = MAPISTORE_PERMISSIONS_TABLE;
 				break;
 			default:
-				OC_ABORT(false, ("Unhandled table type for folders: %d\n", table_type));
+				OC_PANIC(false, ("Unhandled table type for folders: %d\n", table_type));
 				talloc_free(table_object);
 				return NULL;
 			}
@@ -1452,7 +1452,7 @@ _PUBLIC_ struct emsmdbp_object *emsmdbp_folder_open_table(TALLOC_CTX *mem_ctx,
 					break;
 				default:
 					table_object->object.table->denominator = 0;
-					OC_ABORT(false, ("Unhandled openchangedb table type for folders: %d\n", table_type));
+					OC_PANIC(false, ("Unhandled openchangedb table type for folders: %d\n", table_type));
 					return table_object;
 				}
 			}
@@ -1712,7 +1712,7 @@ _PUBLIC_ void **emsmdbp_object_table_get_row_props(TALLOC_CTX *mem_ctx, struct e
 			mapistore_folder = false;
 			break;
 		default:
-			OC_ABORT(true, ("Trying open row in unsupported type of table. Table type: %d\n", table_object->object.table->ulType));
+			OC_PANIC(true, ("Trying open row in unsupported type of table. Table type: %d\n", table_object->object.table->ulType));
 			return NULL;
 		}
 		if (ret != MAPISTORE_SUCCESS) {
@@ -1972,8 +1972,8 @@ static enum MAPISTATUS emsmdbp_fetch_freebusy(TALLOC_CTX *mem_ctx,
 	/* open Inbox */
 	retval = openchangedb_get_SystemFolderID(emsmdbp_ctx->oc_ctx, username, EMSMDBP_INBOX, &inboxFID);
 	OPENCHANGE_RETVAL_IF(retval != MAPI_E_SUCCESS, retval, local_mem_ctx);
-	retval_mapistore = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, mailbox, inboxFID, &inbox);
-	OPENCHANGE_RETVAL_IF(retval_mapistore != MAPISTORE_SUCCESS, MAPI_E_NOT_FOUND, local_mem_ctx);
+	retval = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, mailbox, inboxFID, &inbox);
+	OPENCHANGE_RETVAL_IF(retval != MAPI_E_SUCCESS, retval, local_mem_ctx);
 
 	/* retrieve Calendar entry id */
 	props = talloc_zero(mem_ctx, struct SPropTagArray);
@@ -1994,8 +1994,8 @@ static enum MAPISTATUS emsmdbp_fetch_freebusy(TALLOC_CTX *mem_ctx,
 	calendarFID |= 1;
 
 	/* open user calendar */
-	retval_mapistore = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, mailbox, calendarFID, &calendar);
-	OPENCHANGE_RETVAL_IF(retval_mapistore != MAPISTORE_SUCCESS, MAPI_E_NOT_FOUND, local_mem_ctx);
+	retval = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, mailbox, calendarFID, &calendar);
+	OPENCHANGE_RETVAL_IF(retval != MAPI_E_SUCCESS, retval, local_mem_ctx);
 
 	if (!emsmdbp_is_mapistore(calendar)) {
 		DEBUG(5, ("[emsmdbp_object][%s:%d]: non-mapistore calendars are not supported for freebusy\n",
@@ -2080,8 +2080,9 @@ _PUBLIC_ enum mapistore_error emsmdbp_object_message_open(TALLOC_CTX *mem_ctx, s
 	if (!parent_object) return MAPISTORE_ERROR;
 
 	local_mem_ctx = talloc_zero(NULL, TALLOC_CTX);
-	ret = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, parent_object, folderID, &folder_object);
-	if (ret != MAPISTORE_SUCCESS)  {
+	retval = emsmdbp_object_open_folder_by_fid(local_mem_ctx, emsmdbp_ctx, parent_object, folderID, &folder_object);
+	if (retval != MAPI_E_SUCCESS)  {
+		ret = mapi_error_to_mapistore(retval);
 		goto end;
 	}
 
