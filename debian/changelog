@@ -1,3 +1,64 @@
+openchange (3:2.3-zentyal9) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [af087a] Give support to set read direction on QueryRows oxctabl in libmapi
+  * [960051] Implement read backwards on a oxctabl in QueryRows ROP
+  * [8a92ba] Fix prop type for PidNameKeywords
+  * [f173a2] Give support to calendar sharing invitation
+  * [ac4691] Use the owner to get OC DB properties on root folders
+  * [e2d31c] oxcfxics: Give support to retrieve sharing props on demand
+
+  [ Julien Kerihuel ]
+  * [d250be] Fix rpcextract segfault when tower_ptr is NULL Fix mem leak on allocated uuid
+  * [387ac6] Add Sanity checks and prevent uncaught OOM error to lead to a segfault
+  * [2ede21] oxcfxics: latest messages first when syncing
+  * [8a33a6] mapistore: implement fmid cache with memcached
+  * [f75139] Use hash64 #define instead of underlying hash64_any function
+  * [be88ea] Fix memory leak upon failure
+  * [5150a5] Use convert_string_to_ull wrapper instead of strtoull
+  * [23a06a] mapistore:indexing_cache example added and pointers to official documentation added
+  * [1deeb9] oxcfxics: check retval and avoid crash when subfolders object is NULL
+  * [129c18] oxcfxics: Fix `Mark All as Read` feature regression bug introduced by 7737bdf6
+
+  [ Jelmer Vernooij ]
+  * [c4b120] Don't fail if setup/mapistore has already been removed.
+
+  [ Javier Amor García ]
+  * [5b71f5] Avoid read over boundaries error in get_AppointmentRecurrencePattern
+  * [3ff9ee] Added -b flag to crash-retrace.sh, for using the backup repository
+
+  [ Julio García ]
+  * [d7a4e8] Fixing packaging adding openchange_migrate binary
+  * [f35dd9] Preparing release for 2.3-zentyal9
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [1d70a3] Adapt cleanup script to external AD server settings
+  * [6b1779] Ignore sogo user defaults file
+  * [cb27c3] Provide default values for ImapCleaner connection
+
+  [ Murray McCulligh ]
+  * [5867db] rgbAuxOut is an array of bytes
+  * [e18c7b] Implement push code paths for EcDoConnectEx.  Pushed RPC does not use compression or obfuscation even if the pulled RPC does.
+  * [2994b0] Handle the case where rgbAuxOut is NULL.
+
+  [ Jesús García Sáez ]
+  * [ad0242] mapiproxy: emsmdb/nspi single samdb connection
+  * [e213cb] new CHANGES.md
+  * [9519a9] mapiproxy: do not release samdb connection
+  * [e4bd0d] mapiproxy: do not release samdb connection, tevent
+  * [7ad8bb] mapiproxy: refactor samdb init connection
+
+  [ mmcculligh ]
+  * [b4f3b0] Update ndr_mapi.c
+  * [af8275] Cleaned up extra whitespace
+
+  [ Miguel Julián ]
+  * [153e3f] Add libmemcached-dev as build dependency
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Mon, 16 Mar 2015 13:25:29 +0100
+
 openchange (3:2.3-zentyal8) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
