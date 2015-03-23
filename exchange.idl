@@ -1,5 +1,6 @@
 #include "idl_types.h"
 
+cpp_quote("#include <util/debug.h>")
 cpp_quote("#include <gen_ndr/ndr_misc.h>")
 
 /*
@@ -538,7 +539,7 @@ System Attendant Private Interface
 		[in] policy_handle	*handle,
 		[in] uint32		Reserved,
 		[in,out] STAT		*pStat,
-		[in,out,unique] uint32	*plDelta
+		[in,out,unique] int32	*plDelta
 		);
 
 	/*****************/
