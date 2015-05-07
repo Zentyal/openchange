@@ -11,6 +11,7 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Automatic Outlook inbox refresh when receiving new emails
 
 ### Fixes
+* No more `Deleted Items (1)`-like duplicated folders
 * Deny the removal of a special folder
 * Reuse special folders if a new one is being created with the same name
 * Fixed creation of root folders on online mode and some special folders such as Sync Issues.
