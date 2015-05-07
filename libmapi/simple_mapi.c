@@ -107,16 +107,17 @@ _PUBLIC_ enum MAPISTATUS GetDefaultPublicFolder(mapi_object_t *obj_store,
 
 static enum MAPISTATUS CacheDefaultFolders(mapi_object_t *obj_store)
 {
-	enum MAPISTATUS		retval;
-	TALLOC_CTX		*mem_ctx;
-	mapi_object_store_t	*store;
-	mapi_object_t		obj_inbox;
-	mapi_id_t		id_inbox;
-	struct SPropTagArray	*SPropTagArray = NULL;
-	struct SRow		aRow;
-	struct SPropValue	*lpProps;
-	uint32_t		count;
-	const struct Binary_r	*entryid;
+	enum MAPISTATUS		   retval;
+	TALLOC_CTX		   *mem_ctx;
+	mapi_object_store_t	   *store;
+	mapi_object_t		   obj_inbox;
+	mapi_id_t		   id_inbox;
+	struct SPropTagArray	   *SPropTagArray = NULL;
+	struct SRow		   aRow;
+	struct SPropValue	   *lpProps;
+	uint32_t		   count;
+	const struct Binary_r	   *entryid;
+	const struct BinaryArray_r *entries_ids;
 
 	/* Sanity checks */
 	OPENCHANGE_RETVAL_IF(!obj_store, MAPI_E_INVALID_PARAMETER, NULL);
@@ -133,13 +134,14 @@ static enum MAPISTATUS CacheDefaultFolders(mapi_object_t *obj_store)
 	retval = OpenFolder(obj_store, id_inbox, &obj_inbox);
 	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
 	
-	SPropTagArray = set_SPropTagArray(mem_ctx, 0x6,
+	SPropTagArray = set_SPropTagArray(mem_ctx, 0x7,
 					  PR_IPM_APPOINTMENT_ENTRYID,
 					  PR_IPM_CONTACT_ENTRYID,
 					  PR_IPM_JOURNAL_ENTRYID,
 					  PR_IPM_NOTE_ENTRYID,
 					  PR_IPM_TASK_ENTRYID,
-					  PR_IPM_DRAFTS_ENTRYID);
+					  PR_IPM_DRAFTS_ENTRYID,
+					  PR_ADDITIONAL_REN_ENTRYIDS);
 	
 	retval = GetProps(&obj_inbox, 0, SPropTagArray, &lpProps, &count);
 	MAPIFreeBuffer(SPropTagArray);
@@ -184,6 +186,35 @@ static enum MAPISTATUS CacheDefaultFolders(mapi_object_t *obj_store)
 	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, id_inbox, &store->fid_drafts);
 	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
 
+	/* [MS-OXOSFLD] Section 2.2.4 */
+	entries_ids = (const struct BinaryArray_r *)find_SPropValue_data(&aRow, PR_ADDITIONAL_REN_ENTRYIDS);
+	OPENCHANGE_RETVAL_IF(!entries_ids, MAPI_E_NOT_FOUND, mem_ctx);
+
+	/* set cached Sync Issues FID */
+	entryid = entries_ids->lpbin + 1;
+	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, id_inbox, &store->fid_sync_issues);
+	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+
+	/* set cached Junk E-Mail FID */
+	entryid = entries_ids->lpbin + 4;
+	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, id_inbox, &store->fid_junk_email);
+	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+
+	/* set cached Conflicts FID */
+	entryid = entries_ids->lpbin;
+	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, store->fid_sync_issues, &store->fid_conflicts);
+	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+
+	/* set cached Local Failures FID */
+	entryid = entries_ids->lpbin + 2;
+	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, store->fid_sync_issues, &store->fid_local_failures);
+	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+
+	/* set cached Server Failures FID */
+	entryid = entries_ids->lpbin + 3;
+	retval = GetFIDFromEntryID(entryid->cb, entryid->lpb, store->fid_sync_issues, &store->fid_server_failures);
+	OPENCHANGE_RETVAL_IF(retval, retval, mem_ctx);
+
 	store->store_type = PrivateFolderWithCachedFids;
 	
 	mapi_object_release(&obj_inbox);
@@ -214,12 +245,18 @@ static enum MAPISTATUS CacheDefaultFolders(mapi_object_t *obj_store)
    - olFolderNotes
    - olFolderTasks
    - olFolderDrafts
+   - olFolderConflicts
+   - olFolderSyncIssues
+   - olFolderLocalFailures
+   - olFolderServerFailures
+   - olFolderJunk
    - olFolderReminders
    - olFolderFinder
 
    Note that this function will cache FID values for common accessed
-   folders such as calendar, contact, journal, note, task and drafts
-   until the store object got released.
+   folders such as calendar, contact, journal, note, task, drafts,
+   sync issues (and its subfolders conflicts, local and server failures)
+   and junk e-mail until the store object got released.
 
    \return MAPI_E_SUCCESS on success, otherwise a failure code (MAPISTATUS)
    indicating the error.
@@ -291,6 +328,21 @@ _PUBLIC_ enum MAPISTATUS GetDefaultFolder(mapi_object_t *obj_store,
 		return MAPI_E_SUCCESS;
 	case olFolderDrafts:
 		*folder = store->fid_drafts;
+		return MAPI_E_SUCCESS;
+	case olFolderConflicts:
+		*folder = store->fid_conflicts;
+		return MAPI_E_SUCCESS;
+	case olFolderSyncIssues:
+		*folder = store->fid_sync_issues;
+		return MAPI_E_SUCCESS;
+	case olFolderLocalFailures:
+		*folder = store->fid_local_failures;
+		return MAPI_E_SUCCESS;
+	case olFolderServerFailures:
+		*folder = store->fid_server_failures;
+		return MAPI_E_SUCCESS;
+	case olFolderJunk:
+		*folder = store->fid_junk_email;
 		return MAPI_E_SUCCESS;
 	case olFolderFinder:
 		*folder = store->fid_search;
@@ -364,6 +416,16 @@ _PUBLIC_ bool IsMailboxFolder(mapi_object_t *obj_store,
 		olFolderNum = olFolderTasks;
 	} else if (fid == store->fid_drafts) {
 		olFolderNum = olFolderDrafts;
+	} else if (fid == store->fid_conflicts) {
+		olFolderNum = olFolderDrafts;
+	} else if (fid == store->fid_sync_issues) {
+		olFolderNum = olFolderSyncIssues;
+	} else if (fid == store->fid_local_failures) {
+		olFolderNum = olFolderLocalFailures;
+	} else if (fid == store->fid_server_failures) {
+		olFolderNum = olFolderServerFailures;
+	} else if (fid == store->fid_junk_email) {
+		olFolderNum = olFolderJunk;
 	} else if (fid == store->fid_search) {
 		olFolderNum = olFolderFinder;
 	} else if (fid == store->fid_pf_OfflineAB) {
