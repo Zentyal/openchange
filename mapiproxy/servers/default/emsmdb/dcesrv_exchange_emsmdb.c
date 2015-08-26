@@ -217,12 +217,24 @@ static enum MAPISTATUS dcesrv_EcDoDisconnect(struct dcesrv_call_state *dce_call,
 					     TALLOC_CTX *mem_ctx,
 					     struct EcDoDisconnect *r)
 {
+	struct dcesrv_handle		*h;
+	struct mpm_session		*session;
+
 	OC_DEBUG(3, "exchange_emsmdb: EcDoDisconnect (0x1)\n");
 
 	/* Step 0. Ensure incoming user is authenticated */
 	if (!dcesrv_call_authenticated(dce_call)) {
 		OC_DEBUG(1, "No challenge requested by client, cannot authenticate\n");
 		return MAPI_E_LOGON_FAILED;
+	}
+
+	/* Step 1. Retrieve handle and free if emsmdbp context and session are available */
+	h = dcesrv_handle_fetch(dce_call->context, r->in.handle, DCESRV_HANDLE_ANY);
+	if (h) {
+		session = mpm_session_find_by_uuid(&r->in.handle->uuid);
+		if (session) {
+			mpm_session_release(session);
+		}
 	}
 
 	r->out.handle->handle_type = 0;
