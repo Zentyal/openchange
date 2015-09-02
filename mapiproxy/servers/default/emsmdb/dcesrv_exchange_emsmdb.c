@@ -72,6 +72,7 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 	struct ldb_message		*msg;
 	const char			*mailNickname;
 	const char			*userDN;
+	char				*uuid_str;
 	char				*dnprefix;
 
 	OC_DEBUG(3, "exchange_emsmdb: EcDoConnect (0x0)\n");
@@ -189,7 +190,15 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 
 	/* Search for an existing session, create if it doesn't exist */
 	session = mpm_session_find_by_uuid(&handle->wire_handle.uuid);
-	if (!session) {
+
+	uuid_str = GUID_string(mem_ctx, &handle->wire_handle.uuid);
+	OPENCHANGE_RETVAL_IF(!uuid_str, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
+
+	if (session) {
+		OC_DEBUG(5, "[exchange_emsmdb]: Reusing existing nsp_session: %s", uuid_str);
+	} else {
+		OC_DEBUG(5, "[exchange_emsmdb]: Creating new session");
+
 		/* Step 7. Associate this emsmdbp context to the session */
 		session = mpm_session_init(dce_call, &handle->wire_handle.uuid);
 		OPENCHANGE_RETVAL_IF(!session, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
@@ -197,8 +206,9 @@ static enum MAPISTATUS dcesrv_EcDoConnect(struct dcesrv_call_state *dce_call,
 		mpm_session_set_private_data(session, (void *) emsmdbp_ctx);
 		mpm_session_set_destructor(session, emsmdbp_destructor);
 
-		OC_DEBUG(0, "[exchange_emsmdb]: New session added: %d\n", session->context_id);
+		OC_DEBUG(5, "[exchange_emsmdb]: New session added: %s", uuid_str);
 	}
+	talloc_free(uuid_str);
 
 	return MAPI_E_SUCCESS;
 }
@@ -219,6 +229,7 @@ static enum MAPISTATUS dcesrv_EcDoDisconnect(struct dcesrv_call_state *dce_call,
 {
 	struct dcesrv_handle		*h;
 	struct mpm_session		*session;
+	char				*uuid_str;
 
 	OC_DEBUG(3, "exchange_emsmdb: EcDoDisconnect (0x1)\n");
 
@@ -232,9 +243,16 @@ static enum MAPISTATUS dcesrv_EcDoDisconnect(struct dcesrv_call_state *dce_call,
 	h = dcesrv_handle_fetch(dce_call->context, r->in.handle, DCESRV_HANDLE_ANY);
 	if (h) {
 		session = mpm_session_find_by_uuid(&r->in.handle->uuid);
+
+		uuid_str = GUID_string(mem_ctx, &session->uuid);
+		OPENCHANGE_RETVAL_IF(!uuid_str, MAPI_E_NOT_ENOUGH_RESOURCES, NULL);
 		if (session) {
 			mpm_session_release(session);
+			OC_DEBUG(5, "[exchange_emsmdb]: Session found and released: %s", uuid_str);
+		} else {
+			OC_DEBUG(0, "[exchange_emsmdb]: session NOT found: %s", uuid_str);
 		}
+		talloc_free(uuid_str);
 	}
 
 	r->out.handle->handle_type = 0;
@@ -1152,6 +1170,7 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 	struct ldb_message		*msg;
 	const char			*mailNickname;
 	const char			*userDN;
+	char				*uuid_str;
 	char				*dnprefix;
 	char				*tmp = "";
 
@@ -1295,7 +1314,15 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 
 	/* Search for an existing session, create if it doesn't exist */
 	session = mpm_session_find_by_uuid(&handle->wire_handle.uuid);
-	if (!session) {
+
+	uuid_str = GUID_string(mem_ctx, &handle->wire_handle.uuid);
+	OPENCHANGE_RETVAL_IF(!uuid_str, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
+
+	if (session) {
+		OC_DEBUG(5, "[exchange_emsmdb]: Reusing existing nsp_session: %s", uuid_str);
+	} else {
+		OC_DEBUG(5, "[exchange_emsmdb]: Creating new session");
+
 		/* Step 7. Associate this emsmdbp context to the session */
 		session = mpm_session_init(dce_call, &handle->wire_handle.uuid);
 		OPENCHANGE_RETVAL_IF(!session, MAPI_E_NOT_ENOUGH_RESOURCES, emsmdbp_ctx);
@@ -1303,8 +1330,9 @@ static enum MAPISTATUS dcesrv_EcDoConnectEx(struct dcesrv_call_state *dce_call,
 		mpm_session_set_private_data(session, (void *) emsmdbp_ctx);
 		mpm_session_set_destructor(session, emsmdbp_destructor);
 
-		OC_DEBUG(0, "[exchange_emsmdb]: New session added: %d\n", session->context_id);
+		OC_DEBUG(5, "[exchange_emsmdb]: New session added: %s", uuid_str);
 	}
+	talloc_free(uuid_str);
 
 	return MAPI_E_SUCCESS;
 }
@@ -1660,13 +1688,16 @@ static NTSTATUS dcesrv_exchange_emsmdb_init(struct dcesrv_context *dce_ctx)
    \return NT_STATUS_OK on success
  */
 
-/* FIXME: code temporarily disabled as we don't master the logic behind session handles yet... */
+
 static NTSTATUS dcesrv_exchange_emsmdb_unbind(struct server_id server_id, uint32_t context_id)
 {
-	/* struct exchange_emsmdb_session	*session; */
-	/* bool ret; */
+	char	*server_str;
+	server_str = server_id_str(NULL, &server_id);
+	if (!server_str) return NT_STATUS_OK;
 
-	OC_DEBUG(0, "dcesrv_exchange_emsmdb_unbind: server_id=%d, context_id=0x%x", server_id, context_id);
+	OC_DEBUG(5, "dcesrv_exchange_emsmdb_unbind: server_id=%s, context_id=%u", server_str, context_id);
+	talloc_free(server_str);
+
 	mpm_session_unbind(&server_id, context_id);
 	return NT_STATUS_OK;
 }

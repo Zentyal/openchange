@@ -94,6 +94,7 @@ static void dcesrv_NspiBind(struct dcesrv_call_state *dce_call,
 	struct dcesrv_handle		*handle;
 	struct policy_handle		wire_handle;
 	struct mpm_session		*session;
+	char				*uuid_str;
 	enum MAPISTATUS			retval = MAPI_E_SUCCESS;
 
 	OC_DEBUG(5, "exchange_nsp: NspiBind (0x0)\n");
@@ -145,8 +146,14 @@ static void dcesrv_NspiBind(struct dcesrv_call_state *dce_call,
 
 	/* Search for an existing session, create if it doesn't exist */
 	session = mpm_session_find_by_uuid(&handle->wire_handle.uuid);
-	if (!session) {
-		OC_DEBUG(5, "Creating new session");
+
+	uuid_str = GUID_string(mem_ctx, &handle->wire_handle.uuid);
+	DCESRV_NSP_RETURN_IF(!uuid_str, r, MAPI_E_NOT_ENOUGH_RESOURCES, emsabp_ctx);
+
+	if (session) {
+		OC_DEBUG(5, "[exchange_nsp]: Reusing existing nsp_session: %s", uuid_str);
+	} else {
+		OC_DEBUG(5, "[exchange_nsp]: Creating new session");
 
 		/* Step 6. Associate this emsabp context to the session */
 		session = mpm_session_init(dce_call, &handle->wire_handle.uuid);
@@ -154,7 +161,10 @@ static void dcesrv_NspiBind(struct dcesrv_call_state *dce_call,
 
 		mpm_session_set_private_data(session, (void *) emsabp_ctx);
 		mpm_session_set_destructor(session, emsabp_destructor);
+
+		OC_DEBUG(5, "[exchange_nsp]: New session added: %s", uuid_str);
 	}
+	talloc_free(uuid_str);
 
 	DCESRV_NSP_RETURN(r, MAPI_E_SUCCESS, NULL);
 
@@ -181,6 +191,7 @@ static void dcesrv_NspiUnbind(struct dcesrv_call_state *dce_call,
 {
 	struct dcesrv_handle		*h;
 	struct mpm_session		*session;
+	char				*uuid_str;
 
 	OC_DEBUG(5, "exchange_nsp: NspiUnbind (0x1)\n");
 
@@ -194,9 +205,16 @@ static void dcesrv_NspiUnbind(struct dcesrv_call_state *dce_call,
 	h = dcesrv_handle_fetch(dce_call->context, r->in.handle, DCESRV_HANDLE_ANY);
 	if (h) {
 		session = mpm_session_find_by_uuid(&r->in.handle->uuid);
+
+		uuid_str = GUID_string(mem_ctx, &session->uuid);
+		DCESRV_NSP_RETURN_IF(!uuid_str, r, MAPI_E_NOT_ENOUGH_RESOURCES, NULL);
 		if (session) {
 			mpm_session_release(session);
+			OC_DEBUG(5, "[exchange_nsp]: Session found and released: %s", uuid_str);
+		} else {
+			OC_DEBUG(0, "[exchange_nsp]: session NOT found: %s", uuid_str);
 		}
+		talloc_free(uuid_str);
 	}
 
 	r->out.handle->uuid = GUID_zero();
@@ -1600,7 +1618,13 @@ static NTSTATUS dcesrv_exchange_nsp_init(struct dcesrv_context *dce_ctx)
  */
 static NTSTATUS dcesrv_exchange_nsp_unbind(struct server_id server_id, uint32_t context_id)
 {
-	OC_DEBUG(0, "dcesrv_exchange_nsp_unbind: server_id=%d, context_id=0x%x", server_id, context_id);
+	char	*server_str;
+	server_str = server_id_str(NULL, &server_id);
+	if (!server_str) return NT_STATUS_OK;
+
+	OC_DEBUG(5, "dcesrv_exchange_nsp_unbind: server_id=%s, context_id=%u", server_str, context_id);
+	talloc_free(server_str);
+
 	mpm_session_unbind(&server_id, context_id);
 	return NT_STATUS_OK;
 }
