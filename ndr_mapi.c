@@ -1158,10 +1158,10 @@ _PUBLIC_ enum ndr_err_code ndr_push_EcDoConnectEx(struct ndr_push *ndr, int flag
 		}
 		NDR_CHECK(ndr_push_unique_ptr(ndr, *r->out.szDisplayName));
 		if (*r->out.szDisplayName) {
-			NDR_CHECK(ndr_push_uint3264(ndr, NDR_SCALARS, ndr_charset_length(*r->out.szDisplayName, CH_DOS)));
+			NDR_CHECK(ndr_push_uint3264(ndr, NDR_SCALARS, ndr_string_length(*r->out.szDisplayName, sizeof(**r->out.szDisplayName))));
 			NDR_CHECK(ndr_push_uint3264(ndr, NDR_SCALARS, 0));
-			NDR_CHECK(ndr_push_uint3264(ndr, NDR_SCALARS, ndr_charset_length(*r->out.szDisplayName, CH_DOS)));
-			NDR_CHECK(ndr_push_charset(ndr, NDR_SCALARS, *r->out.szDisplayName, ndr_charset_length(*r->out.szDisplayName, CH_DOS), sizeof(uint8_t), CH_DOS));
+			NDR_CHECK(ndr_push_uint3264(ndr, NDR_SCALARS, ndr_string_length(*r->out.szDisplayName, sizeof(**r->out.szDisplayName))));
+			NDR_CHECK(ndr_push_array_uint8(ndr, NDR_SCALARS, (const uint8_t*) *r->out.szDisplayName, ndr_string_length(*r->out.szDisplayName, sizeof(**r->out.szDisplayName))));
 		}
 		for (cntr_rgwServerVersion_0 = 0; cntr_rgwServerVersion_0 < 3; cntr_rgwServerVersion_0++) {
 			NDR_CHECK(ndr_push_uint16(ndr, NDR_SCALARS, r->out.rgwServerVersion[cntr_rgwServerVersion_0]));
