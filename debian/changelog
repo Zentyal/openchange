@@ -1,3 +1,30 @@
+openchange (3:2.4-zentyal7) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [f80e1c] ndr: Read from NDR the SyncReadStateChanges payload
+  * [217deb] oxcfxics: Mimetise Online mode for SetReadFlag on offline mode
+  * [0070dd] libmapi: Implement SyncReadStateChanges client side call
+  * [896d23] mapitest: Implement SyncReadStateChanges mapitest
+  * [f7ec2d] oxcfxics: Added checks on openchangedb_get_MailboxReplica
+
+  [ Javier Amor García ]
+  * [2c29f5] nspi: added missing attributes mappings for telephone and location
+  * [e5a31d] Added missing removal of object files to Makefile
+
+  [ Julien Kerihuel ]
+  * [0611e8] Fix inconsistencies on error checking between libndr and FastTransfer buffer parser and omply with the model: error if < 0, otherwise success.
+  * [d8d9ac] Replace memory check so that -1 is returned instead of NDR_ERR_ALLOC (> 0)
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [74d784] Allow custom AuthPackage settings for autodiscover
+
+  [ Jesús García Sáez ]
+  * [acbaf7] Prepare for 2.4-zentyal7 release
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Wed, 23 Sep 2015 20:19:22 +0200
+
 openchange (3:2.4-zentyal6) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
