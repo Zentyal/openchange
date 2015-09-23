@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
+## [2.4-zentyal7] - 2015-09-23
+
+### Added
+* Allow custom `AuthPackage` settings for autodiscover
+
+### Fixes
+* Telephone and location fields are now shown in the Global Address List
+
 ## [2.4-zentyal6] - 2015-09-07
 
 ### Fixes
