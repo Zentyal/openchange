@@ -101,7 +101,8 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Fixed performance issue affecting initial synchronization of business size mailbox contents
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal5...HEAD
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...HEAD
+[2.4-zentyal6]: https://github.com/Zentyal/openchange/compare/2.4-zentyal6...2.4-zentyal7
 [2.4-zentyal6]: https://github.com/Zentyal/openchange/compare/2.4-zentyal5...2.4-zentyal6
 [2.4-zentyal5]: https://github.com/Zentyal/openchange/compare/2.4-zentyal4...2.4-zentyal5
 [2.4-zentyal4]: https://github.com/Zentyal/openchange/compare/2.4-zentyal3...2.4-zentyal4
