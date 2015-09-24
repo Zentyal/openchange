@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
+## Unreleased
+
+### Fixes
+* Support notifications when the username is different from mail address (e.g. user bob with bobby@domain.com as his email)
+
 ## [2.4-zentyal7] - 2015-09-23
 
 ### Added
