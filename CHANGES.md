@@ -4,18 +4,24 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
-## Unreleased
+## [unreleased]
 
 ### Fixes
 * Support notifications when the username is different from mail address (e.g. user bob with bobby@domain.com as his email)
+
 
 ## [2.4-zentyal7] - 2015-09-23
 
 ### Added
 * Allow custom `AuthPackage` settings for autodiscover
 
+### Improvements
+* Improvements over SyncImportReadStateChanges
+
 ### Fixes
 * Telephone and location fields are now shown in the Global Address List
+* Fix infinite loop when ndrdump is enabled
+
 
 ## [2.4-zentyal6] - 2015-09-07
 
@@ -24,6 +30,7 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Openchange sessions are handled much better
 * Rpcproxy handles client disconnections better
 * Avoid race condition uploading changes which made new objects be missed
+
 
 ## [2.4-zentyal5] - 2015-08-26
 
@@ -34,12 +41,16 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Use only one connection for all memcached
 * Out of office message supports non-ascii characters
 
+
 ## [2.4-zentyal4] - 2015-08-06
 
 ### Fixes
 
 * File name and correct size in small sized attachments, and submit time are now sent
   by OpenChange client against OpenChange server
+* Less crashes on asyncemsmdb and oxcfxics code
+* Added initial decoder for FastTransferBuffer blobs available using `mapiproxy:ndrdump = yes`
+* Fix provision using (>= 1.2.5) `python-mysqldb` library
 
 
 ## [2.4-zentyal3] - 2015-07-28
@@ -47,6 +58,10 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 ### Fixes
 
 * Several crash fixes
+* Fix several synchronisation issues
+* Provision ActiveSync LDAP attribute on `openchange_newuser`
+* Add option to remove openchange user's LDAP attributes (`openchange_newuser --delete`)
+* Option to enable all groups from an organization on `openchange_group` command (`--enable-all-groups`)
 
 
 ## [2.4-zentyal2] - 2015-06-24
@@ -104,6 +119,7 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 ### Performances
 * Fixed performance issue affecting initial synchronization of business size mailbox contents
+
 
 [//]: # (unreleased compare link should be changed to the latest release)
 [unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...HEAD
