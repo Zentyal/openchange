@@ -6,9 +6,12 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 ## [unreleased]
 
-### Fixes
-* Support notifications when the username is different from mail address (e.g. user bob with bobby@domain.com as his email)
+## [2.4-zentyal8] - 2015-09-29
 
+### Fixes
+* Fixed crash about sessions: SIGABRT in GUID_string()
+* Openchangedb: Index added on mapistore_indexing table of mysql
+* Support notifications when the username is different from mail address (e.g. user bob with bobby@domain.com as his email)
 
 ## [2.4-zentyal7] - 2015-09-23
 
@@ -122,8 +125,9 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...HEAD
-[2.4-zentyal6]: https://github.com/Zentyal/openchange/compare/2.4-zentyal6...2.4-zentyal7
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal8...HEAD
+[2.4-zentyal8]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...2.4-zentyal8
+[2.4-zentyal7]: https://github.com/Zentyal/openchange/compare/2.4-zentyal6...2.4-zentyal7
 [2.4-zentyal6]: https://github.com/Zentyal/openchange/compare/2.4-zentyal5...2.4-zentyal6
 [2.4-zentyal5]: https://github.com/Zentyal/openchange/compare/2.4-zentyal4...2.4-zentyal5
 [2.4-zentyal4]: https://github.com/Zentyal/openchange/compare/2.4-zentyal3...2.4-zentyal4
