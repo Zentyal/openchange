@@ -1,3 +1,24 @@
+openchange (3:2.4-zentyal8) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [cc7511] notifications: use email as cn to register resolvers
+  * [2219d6] dovecot-plugin: removed openchange_cn option
+  * [02102b] Update CHANGES.md
+  * [0b38ea] Updated Changes.md with more info written on github releases section
+  * [42fee4] Avoid crash because using session->uid
+  * [481edd] Update CHANGES.md for 2.4-zentyal8
+  * [6d7d01] Required latest dovecot-openchange-plugin
+
+  [ Juan Vallés ]
+  * [3d0bee] Index 'soft_deleted' column in 'mapistore_indexing'
+
+  [ Javier Amor García ]
+  * [32e346] mapistore: uniform log level errors in mapistore initialization
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 29 Sep 2015 17:54:01 +0200
+
 openchange (3:2.4-zentyal7) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
