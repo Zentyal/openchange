@@ -1,3 +1,15 @@
+openchange (3:2.4-zentyal9) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [0a68c0] upgrade CHANGES.md with zentyal releases
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [4b4d63] asyncemsmdb: Fix double free crash on asyncemsmdb sessions
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Fri, 02 Oct 2015 00:43:02 +0200
+
 openchange (3:2.4-zentyal8) trusty; urgency=medium
 
   [ Jesús García Sáez ]
