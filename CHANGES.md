@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
-## [unreleased]
+## [2.4-zentyal9] - 2015-10-02
+
+### Fixes
+* Fix double free crash on asyncemsmdb sessions
 
 ## [2.4-zentyal8] - 2015-09-29
 
@@ -125,7 +128,8 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal8...HEAD
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal9...HEAD
+[2.4-zentyal9]: https://github.com/Zentyal/openchange/compare/2.4-zentyal8...2.4-zentyal9
 [2.4-zentyal8]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...2.4-zentyal8
 [2.4-zentyal7]: https://github.com/Zentyal/openchange/compare/2.4-zentyal6...2.4-zentyal7
 [2.4-zentyal6]: https://github.com/Zentyal/openchange/compare/2.4-zentyal5...2.4-zentyal6
