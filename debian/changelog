@@ -1,3 +1,23 @@
+openchange (3:2.4-zentyal10) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [db137f] ocdb-mysql: Remove compilation warning
+  * [de8a15] libmapi: Implement SyncImportDeletes operation in client side
+  * [e76ab3] oxcfxics: Folder deletion on cached mode now works
+  * [401031] oxcfxics: Added additional checks on SyncImportDeletes
+  * [9385b1] dovecot-plugin: Clarify misleading err msg on send failure
+
+  [ Jesús García Sáez ]
+  * [ac73b9] Update CHANGES.md with 2.4-zentyal9 release
+
+  [ Javier Amor García ]
+  * [762e08] openchange_user_cleanup.py: Fixed SQL identifier escapes
+  * [708b9f] openchange_user_cleanup.py: Added DE pattern for sync issues
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Fri, 09 Oct 2015 18:01:13 +0200
+
 openchange (3:2.4-zentyal9) trusty; urgency=medium
 
   [ Jesús García Sáez ]
