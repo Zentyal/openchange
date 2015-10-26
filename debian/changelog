@@ -1,3 +1,29 @@
+openchange (3:2.4-zentyal11) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [b53a80] Fix log level on OC_DEBUG wrapper
+  * [a69631] mapistore: Add unit tests for client replica mapping table
+  * [8d57dc] ocdb: Include replica mapping interface in OpenChangeDB context
+  * [4fe929] ocdb: Implement replica mapping UI for LDB backend
+  * [8d24b0] fxbuffer: Decode PT_MV_UNICODE
+  * [cd3dcd] oxcfxics: Do not merge non-related CNs on getting state
+  * [043f1c] mapitest: Extend oxcfxics import read state changes test
+  * [b95690] libmapi: Improved log message
+  * [19977c] libmapi: Merge only idset with valid ranges
+  * [58714a] libmapi: Treat non-single two element rawidset likewise bigger idsets
+  * [2a185a] testsuite: Use the same setup and teardown
+  * [61ea00] ocdb: Implement replica mapping in MySQL backend
+  * [dbf6b4] ocdb: Implement replica_mapping in logger backend
+  * [d1478d] oxcstor: Move replica id - GUID mapping table to OpenChangeDB
+  * [e55da3] Remove outdated code mapistore_replica_mapping
+
+  [ Jesús García Sáez ]
+  * [7ebd7d] update CHANGES.md with 2.4-zentyal10 release
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Mon, 26 Oct 2015 13:47:15 +0100
+
 openchange (3:2.4-zentyal10) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
