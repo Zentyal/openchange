@@ -4,16 +4,35 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
+
+## [2.4-zentyal11] - 2015-10-26
+
+### Fixes
+* Openchange log level back to normal (no need to use log level +1 anymore)
+* Do not return invalid GLOBSET range of identifiers if the first operation
+  of a folder (no data in client) is an upload.
+* Returning only affected change numbers after uploading changes
+  that involves several messages
+* Return proper identifier states after performing upload operations
+  that involves more than one message
+
+### Improvements
+* Reimplemented replica ID - GUID mapping in openchangedb
+* Decode Multiple Value Unicode strings in FastTransfer buffer when dumping
+
+
 ## [2.4-zentyal10] - 2015-10-09
 
 ### Fixes
 * Fix openchange_user_cleanup.py bug with user names with non-alphanumerics characters
 * Folder deletion using cached mode
 
+
 ## [2.4-zentyal9] - 2015-10-02
 
 ### Fixes
 * Fix double free crash on asyncemsmdb sessions
+
 
 ## [2.4-zentyal8] - 2015-09-29
 
@@ -21,6 +40,7 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Fixed crash about sessions: SIGABRT in GUID_string()
 * Openchangedb: Index added on mapistore_indexing table of mysql
 * Support notifications when the username is different from mail address (e.g. user bob with bobby@domain.com as his email)
+
 
 ## [2.4-zentyal7] - 2015-09-23
 
@@ -134,7 +154,8 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal10...HEAD
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal11...HEAD
+[2.4-zentyal11]: https://github.com/Zentyal/openchange/compare/2.4-zentyal10...2.4-zentyal11
 [2.4-zentyal10]: https://github.com/Zentyal/openchange/compare/2.4-zentyal9...2.4-zentyal10
 [2.4-zentyal9]: https://github.com/Zentyal/openchange/compare/2.4-zentyal8...2.4-zentyal9
 [2.4-zentyal8]: https://github.com/Zentyal/openchange/compare/2.4-zentyal7...2.4-zentyal8
