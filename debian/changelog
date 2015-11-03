@@ -1,3 +1,23 @@
+openchange (3:2.4-zentyal12) trusty; urgency=medium
+
+  [ Javier Amor García ]
+  * [65ae51] ndr: Use UNIX charset instead of DOS charset
+  * [798075] ndr: Removed charset attribute
+  * [b46364] Changes to avoid compile warnings after IDL changes
+  * [92ad6e] Updated CHANGES.md
+
+  [ Jesús García Sáez ]
+  * [1721fb] Updated CHANGES.md with release 2.4-zentyal11
+
+  [ Enrique J. Hernández Blasco ]
+  * [8817c9] libmapi: Do not abort on GLOBSET parsing
+  * [4ede2a] libmapi: Return NULL in IDSET_parse if the parsing has failed
+  * [e5807c] oxcfxics: Do not abort on failing open msg table in SyncConfigure
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 03 Nov 2015 18:17:11 +0100
+
 openchange (3:2.4-zentyal11) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
