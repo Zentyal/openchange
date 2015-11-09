@@ -232,10 +232,10 @@ static inline bool GLOBSET_parser_do_bitmask(struct GLOBSET_parser *parser)
 	bool blank = false;
 
 	mask = parser->buffer.data[parser->buffer_position+1];
-	parser->buffer_position += 2;
 
 	additional.length = 1;
 	additional.data = parser->buffer.data + parser->buffer_position;
+	parser->buffer_position += 2;
 
 	combined = GLOBSET_parser_stack_combine(NULL, parser, &additional);
 	if (combined == NULL) {
@@ -252,11 +252,10 @@ static inline bool GLOBSET_parser_do_bitmask(struct GLOBSET_parser *parser)
 		if (blank) {
 			if ((mask & bit)) {
 				blank = false;
-				lowValue = baseValue + ((uint64_t) (bit + 1) << 40);
+				lowValue = baseValue + ((uint64_t) (i + 1) << 40);
 				highValue = lowValue;
 			}
-		}
-		else {
+		} else {
 			if ((mask & bit) == 0) {
 				range = talloc_zero(parser, struct globset_range);
 				if (!range) {
@@ -268,9 +267,8 @@ static inline bool GLOBSET_parser_do_bitmask(struct GLOBSET_parser *parser)
 				DLIST_ADD_END(parser->ranges, range, void);
 				parser->range_count++;
 				blank = true;
-			}
-			else {
-				highValue = baseValue + ((uint64_t) (bit + 1) << 40);
+			} else {
+				highValue = baseValue + ((uint64_t) (i + 1) << 40);
 			}
 		}
 	}
@@ -733,8 +731,25 @@ static void IDSET_reorder_ranges(struct idset *idset)
 	talloc_free(ranges);
 }
 
+/* Compact already sorted ranges from an idset.
+
+   Following cases are done:
+
+   * If single = true, then all ranges are collapsed into a single one
+   * If single = false, then three cases are considered:
+      * If a range B is within other range A, then range B is removed
+        A[ B[...]B ]A -> A[ ... ]A
+      * If a range B intersects other range B, then range B upper bound is set
+        as new range upper bound and remove B
+        A[ B[...]A ]B -> A[ ... ]B
+      * If a range B starts right after the end of range A, then
+        range B upper bound is set as merged range upper bound and remove B
+        A[ .. ]AB[ .. B] -> A[ ... ]B
+
+*/
 static void IDSET_compact_ranges(struct idset *idset)
 {
+	bool compact = false;
 	struct globset_range *range, *next_range, *prev_range;
 
 	if (!idset || idset->range_count < 2) return;
@@ -756,17 +771,26 @@ static void IDSET_compact_ranges(struct idset *idset)
 		range->next = NULL;
 		range->prev = range;
 		idset->range_count = 1;
-	}
-	else {
+	} else {
 		range = idset->ranges;
 		while (range) {
 			next_range = range->next;
 			while (next_range) {
+				compact = false;
 				if (exchange_globcnt(next_range->low) >= exchange_globcnt(range->low)
 				    && exchange_globcnt(next_range->low) <= exchange_globcnt(range->high)) {		/* A[  B[...  ]A */
-					if (exchange_globcnt(next_range->high) > exchange_globcnt(range->high)) {	/* A[  B[  ]A  ]B -> A[  B[  ]AB */
+					if (exchange_globcnt(next_range->high) > exchange_globcnt(range->high)) {	/* A[  B[  ]A  ]B -> A[	 B[  ]AB */
 						range->high = next_range->high;
 					}
+					compact = true;
+				} else if (exchange_globcnt(next_range->low) >= exchange_globcnt(range->low)
+					   && exchange_globcnt(range->high) + 1 == exchange_globcnt(next_range->low)) { /* A[ ... ]AB[ ... ]B */
+					range->high = next_range->high;
+					compact = true;
+				} else {
+					next_range = NULL;
+				}
+				if (compact) {
 					range->next = next_range->next;
 					if (range->next) {
 						range->next->prev = range;
@@ -777,9 +801,6 @@ static void IDSET_compact_ranges(struct idset *idset)
 					idset->range_count--;
 					talloc_free(next_range);
 					next_range = range->next;
-				}
-				else {
-					next_range = NULL;
 				}
 			}
 			range = range->next;
