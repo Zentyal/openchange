@@ -1,3 +1,15 @@
+openchange (3:2.4-zentyal13) trusty; urgency=medium
+
+  * Uniform the hack CNSetRead = CNSetSeen until MS-OXCFXICS Section 3.2.5.6 is implemented
+  * Perform proper decoding of idsets which contain GLOBSETs encoded using bitmask command.
+    That avoids sync issues when returning the new state after badly parsing incoming one.
+
+  * Optimise idset data usage on downloading changes with consecutive ranges
+
+  This is the last package for zentyal 4.1 (and samba 4.1)
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com> Mon, 09 Nov 2015 18:53:38 +0100
+
 openchange (3:2.4-zentyal12) trusty; urgency=medium
 
   [ Javier Amor García ]
