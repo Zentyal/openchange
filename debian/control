@@ -27,12 +27,12 @@ Build-Depends: autoconf,
                libnanomsg-dev,
                pkg-config,
                python-all-dev (>= 2.6.6-3),
-               python-samba (>= 2:4.1.3),
+               python-samba (>= 4.3.1),
                python-paste,
                python-pastedeploy,
                python-pastescript,
                python-mako,
-               samba-dev (>= 2:4.1.3),
+               samba-dev (>= 4.3.1),
                zlib1g-dev,
 Breaks: dovecot-openchange-plugin (<= 0.4)
 Standards-Version: 3.9.4
@@ -131,7 +131,7 @@ Package: openchangeserver
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
 Depends: openchangeproxy,
-         samba (>= 2:4.1.3),
+         samba (>= 4.3.1),
          python-memcache,
          curl,
          ${misc:Depends},
@@ -145,7 +145,7 @@ Description: Experimental MAPI (Exchange/Outlook) server
 Package: openchangeserver-dev
 Architecture: any
 Depends: openchangeserver (= ${binary:Version}),
-         samba-dev (>= 2:4.1.3),
+         samba-dev (>= 4.3.1),
          ${misc:Depends}
 Description: Experimental MAPI (Exchange/Outlook) server - development files
  This is a plugin for Samba 4 that adds server-side support for the MAPI
@@ -155,7 +155,7 @@ Description: Experimental MAPI (Exchange/Outlook) server - development files
 
 Package: openchangeproxy
 Architecture: any
-Depends: samba (>= 4.1.3), ${misc:Depends}, ${shlibs:Depends}
+Depends: samba (>= 4.3.1), ${misc:Depends}, ${shlibs:Depends}
 Description: Experimental MAPI (Exchange/Outlook) proxy
  This is a plugin for Samba 4 that provides a proxy for the MAPI protocol.
 
@@ -235,8 +235,8 @@ Depends: python-paste (>= 1.7.2),
          python-mako (>= 0.2.4),
          python-rpclib (>= 2.7.0),
          python-mapistore (= ${binary:Version}),
-	 python-sievelib,
-         samba (>= 4.1.3),
+         python-sievelib,
+         samba (>= 4.3.1),
          ${misc:Depends},
          ${python:Depends},
          ${shlibs:Depends}
