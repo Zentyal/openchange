@@ -1,3 +1,27 @@
+openchange (4:2.4-zentyal14) trusty; urgency=medium
+
+  [ Julien Kerihuel ]
+  * [414afd] Add Sanity check on talloc_named retval
+  * [03a933] Use retval instead of GetLastError() to work around a ndr_pull decoding error with QueryRows in openchangeclient.c
+
+  [ Brad Hards ]
+  * [80bbe8] Migrate to Samba 4.2.2
+  * [f6ef63] Fix memory leaks
+  * [f69712] Free debug symbols.
+
+  [ Jesús García Sáez ]
+  * [95341b] Upgrade to samba 4.3.0
+  * [5d8950] Replace server_id_str for server_id_str_buf
+  * [7243a0] Updated travis
+  * [0b22e5] bug-analysis: 4.2 is now the stable version
+  * [d2ee82] Updated CHANGES.md for 2.4-zentyal14 release
+  * [06c24d] Fix format debian/changelog
+  * [55e8bf] Update debian/control samba dependencies
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Wed, 11 Nov 2015 15:06:01 +0100
+
 openchange (3:2.4-zentyal13) trusty; urgency=medium
 
   * Uniform the hack CNSetRead = CNSetSeen until MS-OXCFXICS Section 3.2.5.6 is implemented
