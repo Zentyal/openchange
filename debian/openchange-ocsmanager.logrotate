@@ -1,0 +1,9 @@
+/var/log/ocsmanager/*.log {
+         rotate 7
+         size 10M
+         missingok
+         compress
+         delaycompress
+         notifempty
+         copytruncate
+}
