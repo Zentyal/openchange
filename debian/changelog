@@ -1,3 +1,28 @@
+openchange (4:2.4-zentyal15) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [d99fb2] Give support to Autodiscover requests
+  * [7ea0cb] Do not fail receiving an empty idset on SyncUploadStateStreamEnd
+  * [d54b79] Added missing packages binaries from samba source
+  * [d0c988] Notify missing --profile when using --create in mapiprofile
+  * [5ca02d] Added logrotate conf for ocsmanager
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [3cf66b] mapiproxy: retry failed `ldb_search` calls
+  * [88efcd] mapiproxy: do not crash if ldap initial connection fails
+  * [ddabba] mapiproxy: do not free ldb context until reconnect works
+  * [5d7dc5] mapiproxy: reference sam_ctx in conn_info struct
+  * [7bf57b] mapiproxy: make `safe_ldb_search` public
+  * [97b17c] mapiproxy: save new ldb_context after successful reconnect
+
+  [ Jesús García Sáez ]
+  * [5744ea] Updated CHANGES.md for 2.4-zentyal15 release
+  * [616073] Update debian/control, this new version breaks old sogo
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Thu, 26 Nov 2015 13:30:29 +0100
+
 openchange (4:2.4-zentyal14) trusty; urgency=medium
 
   [ Julien Kerihuel ]
