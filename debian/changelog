@@ -1,3 +1,24 @@
+openchange (4:2.4-zentyal16) trusty; urgency=medium
+
+  [ Roel van Meer ]
+  * [52e06c] Log failure opening the backend store path
+
+  [ Enrique J. Hernández Blasco ]
+  * [a18d8a] libmapi: Refactor nspi_ResolveNames(W|) to count values once
+  * [bbb230] mapitest: Test NULL search in NSPI ResolveNames(W|) ROPs
+  * [cc1fa0] mapitest: Refactor to set a non-expected value as failed test
+  * [76cb20] nspi: Manage NULL as query values in ResolveNames ROPs
+
+  [ Carlos Pérez-Aradros Herce ]
+  * [5d5da6] openchangedb: fix table restrictions sql queries
+
+  [ Jesús García Sáez ]
+  * [1e0de8] Update CHANGES.md for 2.4-zentyal16 release
+
+  [ Jenkins bot user ]
+
+ -- Jenkins bot user <jenkins@ci08.hq.zentyal.com>  Tue, 01 Dec 2015 18:15:08 +0100
+
 openchange (4:2.4-zentyal15) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
