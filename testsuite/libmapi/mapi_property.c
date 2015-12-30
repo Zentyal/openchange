@@ -154,6 +154,31 @@ START_TEST (test_mapi_copy_spropvalues) {
 
 } END_TEST
 
+START_TEST (test_get_RecurrencePattern) {
+	struct Binary_r		    bin;
+	struct RecurrencePattern    *res;
+	/* case 0 comes from an event created with outlook, weekly recurrence and with canceled instances and exceptions */
+	const uint8_t case_0[] =
+		{0x04, 0x30, 0x04, 0x30, 0x0b, 0x20, 0x01, 0x00, 0x00, 0x00, 0x60, 0x27, 0x00, 0x00, 0x02, 0x00,
+		 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x00, 0x00, 0x23, 0x20, 0x00, 0x00, 0x0a, 0x00,
+		 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0xe0, 0xbc, 0xfb, 0x0c, 0xc0, 0x54,
+		 0xfc, 0x0c, 0x01, 0x00, 0x00, 0x00, 0xc0, 0x54, 0xfc, 0x0c, 0xe0, 0xbc, 0xfb, 0x0c, 0xdf, 0x80,
+		 0xe9, 0x5a};
+	const size_t		    case_size = sizeof(case_0)/sizeof(uint8_t);
+
+	bin.cb = case_size;
+	bin.lpb = (uint8_t *) case_0;
+	res = get_RecurrencePattern(mem_ctx, &bin);
+
+	ck_assert(res != NULL);
+	ck_assert_int_eq(talloc_parent(res), mem_ctx);
+	ck_assert_int_eq(res->DeletedInstanceCount, 2);
+	ck_assert_int_eq(talloc_parent(res->DeletedInstanceDates), mem_ctx);
+	ck_assert_int_eq(res->ModifiedInstanceCount, 1);
+	ck_assert_int_eq(talloc_parent(res->ModifiedInstanceDates), mem_ctx);
+
+} END_TEST
+
 START_TEST (test_get_AppointmentRecurrencePattern) {
 	int i;
 	int nCases = 5;
@@ -188,6 +213,10 @@ START_TEST (test_get_AppointmentRecurrencePattern) {
 		struct AppointmentRecurrencePattern *res;
 		res = get_AppointmentRecurrencePattern(mem_ctx, &cases[i]);
 		ck_assert(res != NULL);
+		ck_assert_int_eq(talloc_parent(res), mem_ctx);
+		if (res->ExceptionCount > 0) {
+			ck_assert_int_eq(talloc_parent(res->ExceptionInfo), mem_ctx);
+		}
 	}
 } END_TEST
 
@@ -315,6 +344,37 @@ START_TEST (test_get_SizedXidArray) {
 
 } END_TEST
 
+START_TEST (test_get_TimeZoneDefinition) {
+	struct Binary_r		    bin;
+	struct TimeZoneDefinition   *res;
+	/* TimeZoneDefinition with 2 TZRules, as in [MS-OXOCAL] 4.1.4 */
+	const uint8_t		    case_0[] =
+		{0x02, 0x01, 0x30, 0x00, 0x02, 0x00, 0x15, 0x00, 0x50, 0x00, 0x61, 0x00, 0x63, 0x00, 0x69,
+		 0x00, 0x66, 0x00, 0x69, 0x00, 0x63, 0x00, 0x20, 0x00, 0x53, 0x00, 0x74, 0x00, 0x61, 0x00,
+		 0x6E, 0x00, 0x64, 0x00, 0x61, 0x00, 0x72, 0x00, 0x64, 0x00, 0x20, 0x00, 0x54, 0x00, 0x69,
+		 0x00, 0x6D, 0x00, 0x65, 0x00, 0x02, 0x00, 0x02, 0x01, 0x3E, 0x00, 0x00, 0x00, 0xD6, 0x07,
+		 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0,
+		 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC4, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x0A, 0x00,
+		 0x00, 0x00, 0x05, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,
+		 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01,
+		 0x3E, 0x00, 0x02, 0x00, 0xD7, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xC4, 0xFF,
+		 0xFF, 0xFF, 0x00, 0x00, 0x0B, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
+		 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
+		 0x00, 0x00, 0x00, 0x00};
+	const size_t		    case_size = sizeof(case_0)/sizeof(uint8_t);
+
+	bin.cb = case_size;
+	bin.lpb = (uint8_t *) case_0;
+	res = get_TimeZoneDefinition(mem_ctx, &bin);
+
+	ck_assert(res != NULL);
+	ck_assert_int_eq(talloc_parent(res), mem_ctx);
+	ck_assert_int_eq(res->cRules, 2);
+	ck_assert_int_eq(talloc_parent(res->TZRules), mem_ctx);
+
+} END_TEST
+
 // ^ unit tests ---------------------------------------------------------------
 
 // v suite definition ---------------------------------------------------------
@@ -362,6 +422,16 @@ static void tc_mapi_copy_spropvalues_teardown(void)
 	talloc_free(mem_ctx);
 }
 
+static void get_RecurrencePattern_setup(void)
+{
+	mem_ctx = talloc_new(talloc_autofree_context());
+}
+
+static void get_RecurrencePattern_teardown(void)
+{
+	talloc_free(mem_ctx);
+}
+
 static void tc_get_AppointmentRecurrencePattern_setup(void)
 {
 	mem_ctx = talloc_new(talloc_autofree_context());
@@ -392,6 +462,16 @@ static void get_SizedXidArray_teardown(void)
 	talloc_free(mem_ctx);
 }
 
+static void get_TimeZoneDefinition_setup(void)
+{
+	mem_ctx = talloc_new(talloc_autofree_context());
+}
+
+static void get_TimeZoneDefinition_teardown(void)
+{
+	talloc_free(mem_ctx);
+}
+
 Suite *libmapi_property_suite(void)
 {
 	Suite *s = suite_create("libmapi property");
@@ -400,6 +480,11 @@ Suite *libmapi_property_suite(void)
 	tc = tcase_create("mapi_copy_spropvalues");
 	tcase_add_checked_fixture(tc, tc_mapi_copy_spropvalues_setup, tc_mapi_copy_spropvalues_teardown);
 	tcase_add_test(tc, test_mapi_copy_spropvalues);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("get_RecurrencePattern");
+	tcase_add_unchecked_fixture(tc, get_RecurrencePattern_setup, get_RecurrencePattern_teardown);
+	tcase_add_test(tc, test_get_RecurrencePattern);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("get_AppointmentRecurrencePattern");
@@ -417,6 +502,11 @@ Suite *libmapi_property_suite(void)
 	tc = tcase_create("get_SizedXidArray");
 	tcase_add_unchecked_fixture(tc, get_SizedXidArray_setup, get_SizedXidArray_teardown);
 	tcase_add_test(tc, test_get_SizedXidArray);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("get_TimeZoneDefinition");
+	tcase_add_unchecked_fixture(tc, get_TimeZoneDefinition_setup, get_TimeZoneDefinition_teardown);
+	tcase_add_test(tc, test_get_TimeZoneDefinition);
 	suite_add_tcase(s, tc);
 
 	return s;

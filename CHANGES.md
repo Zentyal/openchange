@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
+## [unreleased] - YYYY-MM-DD
+
+### Fixes
+* Do not lose a mail sent when SMTP server is down and notify the client
+* Do not crash if we receive OAuth2 Auth Request in NTLM handler
+
+### Improvements
+* Sharing messages are now managed in Online mode as well
+* Perform Change Number restrictions to gather missing messages from
+  the current status of the client
+
+
 ## [2.4-zentyal16] - 2015-12-01
 
 ### Fixes
