@@ -1,3 +1,25 @@
+openchange (4:2.4-zentyal17) trusty; urgency=medium
+
+  [ Juan Vallés ]
+  * [bba372] Use signed integers for time zone biases
+  * [26c668] libmapi: Add get_TimeZoneDefinition method
+  * [1864ad] Hang talloc arrays inside structs from the main mem_ctx
+
+  [ Enrique J. Hernández Blasco ]
+  * [0d36b3] ocdb-logger: Dump Replica GUID on related functions
+  * [fb83c1] ntlm: Do not crash if we receive OAuth2 request
+  * [b46bce] oxcfxics: Perform CN restrictions on downloading changes to client
+  * [049814] oxomsg: Propagate failure when mapistore fails to deliver
+  * [8821ab] libmapistore: MAPISTORE_ERR_SEND_MSG maps to MAPI_E_NETWORK_ERROR
+  * [19b548] oxomsg: Uniform TransportSend and SubmitMessage ROPs
+
+  [ Roel van Meer ]
+  * [ea0b80] Fix crash caused by empty named_properties table
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Wed, 30 Dec 2015 12:05:50 +0100
+
 openchange (4:2.4-zentyal16) trusty; urgency=medium
 
   [ Roel van Meer ]
