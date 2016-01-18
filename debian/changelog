@@ -1,3 +1,21 @@
+openchange (4:2.4-zentyal18) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [78b7a0] Update CHANGES.md for release 2.4-zentyal17
+  * [f1c2d4] Be able to compile with samba 4.1
+  * [79ce8a] Warning compilation pointer-sign
+  * [56d680] Update CHANGES.md for release 2.4-zentyal18
+
+  [ Enrique J. Hernández Blasco ]
+  * [38b939] libmapi: makepropslist.py parsing fixes for updated MS-OXPROPS
+  * [1d9094] libmapi: Update property list from v20150914 MS-OXPROPS
+  * [9202cb] libmapi: Remove two already fixed pbs from latest MS-OXPROPS
+  * [a84667] libmapi: Add PidTagRoamingBinary tag
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Mon, 18 Jan 2016 09:46:12 +0100
+
 openchange (4:2.4-zentyal17) trusty; urgency=medium
 
   [ Juan Vallés ]
