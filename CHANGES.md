@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
-## [unreleased] - YYYY-MM-DD
+## [2.4-zentyal18] - 2016-01-18
+
+### Fixes
+* Persist autocomplete on recipients in Outlook 2010 onwards between
+  profiles and closing/opening Outlook process
+
+
+## [2.4-zentyal17] - 2015-12-30
 
 ### Fixes
 * Do not lose a mail sent when SMTP server is down and notify the client
@@ -210,7 +217,9 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal16...HEAD
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal18...HEAD
+[2.4-zentyal18]: https://github.com/Zentyal/openchange/compare/2.4-zentyal17...2.4-zentyal18
+[2.4-zentyal17]: https://github.com/Zentyal/openchange/compare/2.4-zentyal16...2.4-zentyal17
 [2.4-zentyal16]: https://github.com/Zentyal/openchange/compare/2.4-zentyal15...2.4-zentyal16
 [2.4-zentyal15]: https://github.com/Zentyal/openchange/compare/2.4-zentyal14...2.4-zentyal15
 [2.4-zentyal14]: https://github.com/Zentyal/openchange/compare/2.4-zentyal13...2.4-zentyal14
