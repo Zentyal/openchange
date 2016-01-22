@@ -24,6 +24,8 @@
 #include "mapiproxy/dcesrv_mapiproxy.h"
 #include "mapiproxy/libmapiproxy/fault_util.h"
 
+#include <ldb_module.h>
+
 /* Expose samdb_connect prototype */
 struct ldb_context *samdb_connect(TALLOC_CTX *, struct tevent_context *,
 				  struct loadparm_context *,
@@ -201,6 +203,59 @@ int safe_ldb_search(struct ldb_context **ldb_ptr, TALLOC_CTX *mem_ctx,
 				break;
 			}
 			else {
+				/* reconnect didn't help, forget and retry */
+				TALLOC_FREE(new_ldb);
+			}
+		}
+
+		tries++;
+	} while (tries < 3);
+
+	return ret;
+}
+
+
+/**
+   \details Perform the ldb_wait, but retry given request (reconnecting and issuing the request again)
+   in case of error
+ */
+int safe_ldb_wait(struct ldb_context **ldb_ptr, struct ldb_request *req, enum ldb_wait_type type)
+{
+	int tries = 0;
+	int ret;
+	struct ldb_context *new_ldb = NULL;
+
+	if (ldb_ptr == NULL) {
+		OC_DEBUG(0, "safe_ldb_search got wrong ldb_context");
+		return -1;
+	}
+
+	ret = ldb_wait(req->handle, type);
+	if (ret != LDB_ERR_OPERATIONS_ERROR) {
+		return ret;
+	}
+
+	/* Something failed, try reconnecting */
+	do {
+		OC_DEBUG(3, "sam db connection lost, reconnecting...");
+		new_ldb = samdb_init(talloc_parent(*ldb_ptr));
+
+		if (new_ldb) {
+			req->handle = ldb_handle_new(req, new_ldb);
+			/* Perform request again */
+			ret = ldb_request(new_ldb, req);
+			if (ret != LDB_SUCCESS) {
+				TALLOC_FREE(new_ldb);
+				continue;
+			}
+
+			ret = ldb_wait(req->handle, type);
+			if (ret != LDB_ERR_OPERATIONS_ERROR) {
+				/* reconnect worked, replace ldb_context with the new one */
+				talloc_free(*ldb_ptr);
+				*ldb_ptr = new_ldb;
+				break;
+			} else {
 				/* reconnect didn't help, forget and retry */
 				TALLOC_FREE(new_ldb);
 			}
