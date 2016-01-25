@@ -29,6 +29,7 @@ override_dh_auto_configure:
 		--mandir=/usr/share/man \
 		--with-modulesdir=/usr/lib/$(DEB_HOST_MULTIARCH)/openchange \
 		--libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
+		--enable-timers \
 		--enable-pyopenchange
 	# Urgh
 	sed -i -e 's/site-packages/dist-packages/' config.mk
