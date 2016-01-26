@@ -1,3 +1,25 @@
+openchange (4:2.4-zentyal20) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [e6a8bf] oxcfxics: Importing already deleted deletions as success
+  * [d1ccd2] oxcstor: Deny the removal of special folders on provisioning
+
+  [ Juan Vallés ]
+  * [5eae68] oxocal: Add PidLidMeetingType values
+  * [534c7e] oxocal: Add constansts for PidLidClientIntent masks
+
+  [ Jesús García Sáez ]
+  * [c1b256] Introducing oc_timer for easy timer log messages
+  * [fe46aa] oc_timer for all operations and servers
+  * [f33a80] Add --enable-timers option
+  * [28ef17] oc_timer_stats: script to read logs with timers enabled
+  * [80e951] debian/rules: enable timers
+  * [fe6e4f] Update CHANGES.md for release 2.4-zentyal20
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 26 Jan 2016 10:30:45 +0100
+
 openchange (4:2.4-zentyal19) trusty; urgency=medium
 
   [ Carlos Pérez-Aradros Herce ]
