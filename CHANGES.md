@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The descriptions should be useful and understandable for end users of OpenChange.
 Unreleased changes refer to our current [master branch](https://github.com/openchange/openchange/).
 
+## [2.4-zentyal21] - 2016-02-04
+
+### Fixes
+* Crash and performance due to memory management on asyncemsmdb
+* Crash when samba was down on ocsmanager
+
+### Added
+* Dump PT_MV_LONG properties in FastTransfer Buffer NDR dump
+
+### Improvements
+* Indexing warm up much more efficient
+* Indexing keys store on memcached normally have username as prefix
+
+
 ## [2.4-zentyal20] - 2016-01-26
 
 ### Fixes
@@ -37,6 +51,7 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 * Do not crash if we receive OAuth2 Auth Request in NTLM handler
 
 ### Improvements
+* Retry the samba connection attempt on ocsmanager startup
 * Sharing messages are now managed in Online mode as well
 * Perform Change Number restrictions to gather missing messages from
   the current status of the client
@@ -236,7 +251,8 @@ Unreleased changes refer to our current [master branch](https://github.com/openc
 
 
 [//]: # (unreleased compare link should be changed to the latest release)
-[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal20...HEAD
+[unreleased]: https://github.com/Zentyal/openchange/compare/2.4-zentyal21...HEAD
+[2.4-zentyal21]: https://github.com/Zentyal/openchange/compare/2.4-zentyal20...2.4-zentyal21
 [2.4-zentyal20]: https://github.com/Zentyal/openchange/compare/2.4-zentyal19...2.4-zentyal20
 [2.4-zentyal19]: https://github.com/Zentyal/openchange/compare/2.4-zentyal18...2.4-zentyal19
 [2.4-zentyal18]: https://github.com/Zentyal/openchange/compare/2.4-zentyal17...2.4-zentyal18
