@@ -1,3 +1,28 @@
+openchange (4:2.4-zentyal21) trusty; urgency=medium
+
+  [ Mateo Burillo ]
+  * [0a5438] Adding russian "Sync Issues folder" pattern
+
+  [ Enrique J. Hernández Blasco ]
+  * [0f53b1] fxdump: Dump PT_MV_LONG properties in FastTransfer Buffer NDR
+
+  [ Jesús García Sáez ]
+  * [c02cd2] indexing: new keys with prefix `indexing:USERNAME:`
+  * [465f26] openchange_user_cleanup: support new keys with username
+  * [ff99a7] indexing: mark users as initialized on memcached
+  * [833fe1] openchange_user_cleanup: get memcached host from samba config
+  * [12e168] Update CHANGES.md with indexing improvements
+  * [55833a] Change asyncemsmdb_session ownership
+  * [533b64] sort oc_timer_stats output
+  * [657c87] Prepare CHANGES.md for release 2.4-zentyal21
+
+  [ Javier Amor García ]
+  * [588636] Retry the samba connection attempt on ocsmanager startup
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Thu, 04 Feb 2016 14:24:53 +0100
+
 openchange (4:2.4-zentyal20) trusty; urgency=medium
 
   [ Enrique J. Hernández Blasco ]
