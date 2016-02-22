@@ -1,3 +1,29 @@
+openchange (4:2.4-zentyal22) trusty; urgency=medium
+
+  [ Jesús García Sáez ]
+  * [71a965] openchange_migration: Ignore exception on directory app
+  * [dd7345] oxosfld: stop on PERSIST_SENTINEL
+  * [aa6964] Do not abort with unknown property type
+  * [18f2fa] Add libmapiserver_push_properties
+  * [e85c3c] Use libmapiserver_push_properties instead of for loop
+  * [2f0328] Remove magic numbers on libmapiserver_push_property calls
+  * [37d483] Log message with a property not supported
+  * [4a4551] Update CHANGES.md for release 2.4-zentyal22
+
+  [ Juan Vallés ]
+  * [0cd1d8] Avoid crash in RAWIDSET_push_eid
+  * [09144d] Add verbosity to RAWIDSET_push_guid_glob premature returns
+  * [754d81] Add unit tests for RAWIDSET_push_eid and RAWIDSET_push_guid_glob
+
+  [ Enrique J. Hernández Blasco ]
+  * [ec6d38] emsmdb: Replace MAPI_E_INVALID_OBJECT to ecNullObject
+  * [2818be] nspi: Beautify StringsArray_r structure output
+  * [e80022] oxosfld: Fix compilation warning
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Mon, 22 Feb 2016 10:04:18 +0100
+
 openchange (4:2.4-zentyal21) trusty; urgency=medium
 
   [ Mateo Burillo ]
