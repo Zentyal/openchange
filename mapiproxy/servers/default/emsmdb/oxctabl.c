@@ -80,7 +80,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSetColumns(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -179,7 +179,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSortTable(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -293,7 +293,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopRestrict(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -405,7 +405,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopQueryRows(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -602,7 +602,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopQueryPosition(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -678,7 +678,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSeekRow(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -772,7 +772,6 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFindRow(TALLOC_CTX *mem_ctx,
 	void				**data_pointers;
 	uint32_t			handle;
 	DATA_BLOB			row;
-	uint32_t			property;
 	uint8_t				flagged;
 	uint8_t				status = 0;
 	uint32_t			i;
@@ -800,7 +799,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFindRow(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -862,36 +861,22 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFindRow(TALLOC_CTX *mem_ctx,
 				}
 
 				if (flagged) {
-					libmapiserver_push_property(mem_ctx, 
-								    0x0000000b, (const void *)&flagged,
+					libmapiserver_push_property(mem_ctx, PT_BOOLEAN,
+								    (const void *)&flagged,
 								    &row, 0, 0, 0);
-				}
-				else {
-					libmapiserver_push_property(mem_ctx, 
-								    0x00000000, (const void *)&flagged,
+				} else {
+					libmapiserver_push_property(mem_ctx, PT_UNSPECIFIED,
+								    (const void *)&flagged,
 								    &row, 0, 1, 0);
 				}
-                                
-				/* Push the properties */
-				for (i = 0; i < table->prop_count; i++) {
-					property = table->properties[i];
-					retval = retvals[i];
-					if (retval == MAPI_E_NOT_FOUND) {
-						property = (property & 0xFFFF0000) + PT_ERROR;
-						data = &retval;
-					}
-					else {
-						data = data_pointers[i];
-					}
-                                
-					libmapiserver_push_property(mem_ctx,
-								    property, data, &row,
-								    flagged?PT_ERROR:0, flagged, 0);
-				}
+
+				libmapiserver_push_properties(mem_ctx, table->prop_count,
+					table->properties, data_pointers, retvals,
+					&row, flagged ? PT_ERROR : 0, flagged, 0);
+
 				talloc_free(retvals);
 				talloc_free(data_pointers);
-                        }
-                        else {
+			} else {
 				table->numerator++;
 			}
 		}
@@ -932,35 +917,23 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFindRow(TALLOC_CTX *mem_ctx,
 				}
 
 				if (flagged) {
-					libmapiserver_push_property(mem_ctx, 
-								    0x0000000b, (const void *)&flagged,
+					libmapiserver_push_property(mem_ctx, PT_BOOLEAN,
+								    (const void *)&flagged,
 								    &row, 0, 0, 0);
 				}
 				else {
-					libmapiserver_push_property(mem_ctx, 
-								    0x00000000, (const void *)&flagged,
+					libmapiserver_push_property(mem_ctx, PT_UNSPECIFIED,
+								    (const void *)&flagged,
 								    &row, 0, 1, 0);
 				}
-                                
-				/* Push the properties */
-				for (i = 0; i < table->prop_count; i++) {
-					property = table->properties[i];
-					retval = retvals[i];
-					if (retval == MAPI_E_NOT_FOUND) {
-						property = (property & 0xFFFF0000) + PT_ERROR;
-						data = &retval;
-					}
-					else {
-						data = data_pointers[i];
-					}
-                                
-					libmapiserver_push_property(mem_ctx,
-								    property, data, &row,
-								    flagged?PT_ERROR:0, flagged, 0);
-				}
+
+				libmapiserver_push_properties(mem_ctx, table->prop_count,
+					table->properties, data_pointers, retvals,
+					&row, flagged ? PT_ERROR : 0, flagged, 0);
+
 				talloc_free(retvals);
 				talloc_free(data_pointers);
-                        } else {
+			} else {
 				table->numerator++;
 			}
 		}
@@ -1036,7 +1009,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopResetTable(TALLOC_CTX *mem_ctx,
 	handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle, &parent);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle, mapi_req->handle_idx);
 		goto end;
 	}

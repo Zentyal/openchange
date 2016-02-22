@@ -3,7 +3,8 @@
 
    EMSMDBP: EMSMDB Provider implementation
 
-   Copyright (C) Enrique J. Hernández 2015
+   Copyright (C) Enrique J. Hernández 2015-2016
+   Copyright (C) Jesus Garcia 2016
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -171,20 +172,25 @@ _PUBLIC_ bool oxosfld_is_special_folder(struct emsmdbp_context *emsmdbp_ctx, uin
 
                         for (j = 0; j < persist_data_array->cValues; j++) {
                                 persist_data = persist_data_array->lpPersistData[j];
-                                if (persist_data.PersistID != PERSIST_SENTINEL) {
-                                        persist_element_array = persist_data.DataElements;
-                                        for (k = 0; k < persist_element_array.cValues; k++) {
-
-                                                persist_element = persist_element_array.lpPersistElement[k];
-                                                if (persist_element.ElementID == RSF_ELID_ENTRYID) {
-                                                        checked_folder_entry_id = persist_element.ElementData.rsf_elid_entryid;
-                                                        checked_entry_id.cb = checked_folder_entry_id.length;
-                                                        checked_entry_id.lpb = checked_folder_entry_id.data;
-                                                        if (fid_in_entry_id(&checked_entry_id, inbox_fid, &folder_entry_id, fid)) {
-                                                                OC_DEBUG(5, "The fid 0x%"PRIx64 " found as %d entry in PidTagAdditionalRenEntryIdsEx", fid, persist_data.PersistID);
-                                                                ret = true;
-                                                                goto end;
-                                                        }
+                                if (persist_data.PersistID == PERSIST_SENTINEL) {
+                                        /* This is the last PersistData */
+                                        break;
+                                }
+                                persist_element_array = persist_data.DataElements;
+                                for (k = 0; k < persist_element_array.cValues; k++) {
+                                        persist_element = persist_element_array.lpPersistElement[k];
+                                        if (persist_element.ElementID == ELEMENT_SENTINEL) {
+                                                /* This is the last PersistElement */
+                                                break;
+                                        }
+                                        if (persist_element.ElementID == RSF_ELID_ENTRYID) {
+                                                checked_folder_entry_id = persist_element.ElementData.rsf_elid_entryid;
+                                                checked_entry_id.cb = checked_folder_entry_id.length;
+                                                checked_entry_id.lpb = checked_folder_entry_id.data;
+                                                if (fid_in_entry_id(&checked_entry_id, inbox_fid, &folder_entry_id, fid)) {
+                                                        OC_DEBUG(5, "The fid 0x%"PRIx64 " found as %d entry in PidTagAdditionalRenEntryIdsEx", fid, persist_data.PersistID);
+                                                        ret = true;
+                                                        goto end;
                                                 }
                                         }
                                 }

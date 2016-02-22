@@ -215,8 +215,7 @@ static void oxcfxics_ndr_push_simple_data(struct ndr_push *ndr, uint16_t prop_ty
 	case PT_NULL:
 		break;
 	default:
-		OC_DEBUG(5, "unsupported property type: %.4x\n", prop_type);
-		abort();
+		OC_DEBUG(1, "Property type %#.4x not supported, value not pushed", prop_type);
 	}
 }
 
@@ -249,8 +248,8 @@ static uint32_t oxcfxics_compute_cutmark_min_value_buffer(uint16_t prop_type)
 			min_value_buffer = 8;
 			break;
 		default:
-			OC_DEBUG(5, "unsupported property type: %.4x\n", prop_type);
-			abort();
+			OC_DEBUG(1, "Property type %#.4x not supported", prop_type);
+			min_value_buffer = 0;
 		}
 	}
 
@@ -342,8 +341,7 @@ static void oxcfxics_ndr_push_properties(struct ndr_push *ndr, struct ndr_push *
 					}
 					break;
 				default:
-					OC_DEBUG(5, "no handling for multi values of type %.4x\n", prop_type);
-					abort();
+					OC_DEBUG(1, "No handling for multivalues of type %#.4x", prop_type);
 				}
 			}
 			else {
@@ -468,7 +466,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFastTransferSourceCopyTo(TALLOC_CTX *mem_ctx
 	parent_handle_id = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, parent_handle_id, &parent_object_handle);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", parent_handle_id, mapi_req->handle_idx);
 		goto end;
 	}
@@ -1958,7 +1956,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopFastTransferSourceGetBuffer(TALLOC_CTX *mem_
 	handle_id = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle_id, &object_handle);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle_id, mapi_req->handle_idx);
 		goto end;
 	}
@@ -2055,7 +2053,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncConfigure(TALLOC_CTX *mem_ctx,
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, folder_handle, &folder_rec);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", folder_handle, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -2310,7 +2308,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncImportMessageChange(TALLOC_CTX *mem_ctx,
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle_id, &synccontext_object_handle);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle_id, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -2451,7 +2449,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncImportHierarchyChange(TALLOC_CTX *mem_ct
 	synccontext_handle_id = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle_id, &synccontext_object_handle);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle_id, mapi_req->handle_idx);
 		goto end;
 	}
@@ -2624,7 +2622,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncImportDeletes(TALLOC_CTX *mem_ctx,
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle_id, &synccontext_object_handle);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle_id, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -2794,7 +2792,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncUploadStateStreamBegin(TALLOC_CTX *mem_c
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle, &synccontext_rec);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -2872,7 +2870,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncUploadStateStreamContinue(TALLOC_CTX *me
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle, &synccontext_rec);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -2984,7 +2982,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncUploadStateStreamEnd(TALLOC_CTX *mem_ctx
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle, &synccontext_rec);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -3160,7 +3158,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncImportMessageMove(TALLOC_CTX *mem_ctx,
 	synccontext_handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle, &synccontext_rec);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -3289,7 +3287,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncOpenCollector(TALLOC_CTX *mem_ctx,
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, folder_handle, &folder_rec);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", folder_handle, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
@@ -3378,7 +3376,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopGetLocalReplicaIds(TALLOC_CTX *mem_ctx,
 	handle_id = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, handle_id, &object_handle);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", handle_id, mapi_req->handle_idx);
 		goto end;
 	}
@@ -3460,7 +3458,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncImportReadStateChanges(TALLOC_CTX *mem_c
 	synccontext_handle = handles[mapi_req->handle_idx];
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle, &synccontext_rec);
 	if (retval) {
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+                mapi_repl->error_code = ecNullObject;
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle, mapi_req->handle_idx);
 		goto end;
 	}
@@ -3872,7 +3870,7 @@ _PUBLIC_ enum MAPISTATUS EcDoRpc_RopSyncGetTransferState(TALLOC_CTX *mem_ctx,
 	retval = mapi_handles_search(emsmdbp_ctx->handles_ctx, synccontext_handle_id, &synccontext_handle);
 	if (retval) {
 		OC_DEBUG(5, "  handle (%x) not found: %x\n", synccontext_handle_id, mapi_req->handle_idx);
-		mapi_repl->error_code = MAPI_E_INVALID_OBJECT;
+		mapi_repl->error_code = ecNullObject;
 		goto end;
 	}
 
