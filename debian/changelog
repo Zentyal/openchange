@@ -1,3 +1,21 @@
+openchange (4:2.4-zentyal23) trusty; urgency=medium
+
+  [ Enrique J. Hernández Blasco ]
+  * [2875a1] oxcstor: Start support for logon map table
+  * [34d211] oxcstor: Store logon table in emsmdbp_ctx
+  * [82d32d] libmapistore: fix some documentation to avoid confusing devs
+  * [ac722e] emsmdb: Distinguish authenticated user and logged user
+  * [594ee9] nspi: Give support to PidTagDisplayTypeEx
+  * [37586b] Use logged user to allocate new fmids from indexing
+  * [d6a50d] Update changes with the main feature we provide with this branch
+
+  [ José Antonio Calvo ]
+  * [e37ea5] Update CHANGES.md for release 2.4-zentyal23
+
+  [ Jenkins Zentyal (Zentyal GPG) ]
+
+ -- Jenkins Zentyal (Zentyal GPG) <jenkins@zentyal.com>  Tue, 05 Apr 2016 17:52:45 +0200
+
 openchange (4:2.4-zentyal22) trusty; urgency=medium
 
   [ Jesús García Sáez ]
