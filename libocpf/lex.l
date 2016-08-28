@@ -29,7 +29,6 @@
 #include "libocpf/lex.h"
 
 #define	YY_EXTRA_TYPE	struct ocpf_context *
-#define	YY_NO_UNPUT
 
 static void unterminated(struct ocpf_context *, const char *, unsigned int);
 
