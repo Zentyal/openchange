@@ -1,0 +1,3 @@
+#!/bin/sh
+# ignore output, openchange_migrate is idempotent
+/usr/sbin/openchange_migrate || true

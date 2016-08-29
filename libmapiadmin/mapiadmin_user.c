@@ -30,7 +30,6 @@
 #include <credentials.h>
 #include <ldb_errors.h>
 #include <ldb_wrap.h>
-#include <ldap_ndr.h>
 
 #include <gen_ndr/ndr_samr.h>
 #include <gen_ndr/ndr_samr_c.h>
